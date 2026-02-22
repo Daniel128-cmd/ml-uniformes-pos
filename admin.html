@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Gestión de Pedidos — ML Uniformes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --vino: #7B1929;
+            --vino-dark: #5C0F1B;
+            --vino-light: #9E2235;
+            --vino-pale: #F7E8EB;
+            --beige: #F5EDD6;
+            --beige-dark: #EAD9B5;
+            --white: #FFFFFF;
+            --gray-100: #F8F9FA;
+            --gray-200: #E9ECEF;
+            --gray-400: #ADB5BD;
+            --gray-600: #6C757D;
+            --gray-800: #343A40;
+            --text: #1A1A2E;
+            --green: #1E8E3E;
+            --green-bg: #E6F4EA;
+            --red: #D93025;
+            --red-bg: #FCE8E6;
+            --orange: #E65100;
+            --orange-bg: #FFF3E0;
+            --radius: 12px;
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, .12);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--beige);
+            color: var(--text);
+            min-height: 100vh;
+            font-size: 14px;
+        }
+
+        /* ── LOGIN GATE ── */
+        #login-gate {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, var(--vino-dark) 0%, var(--vino) 60%, var(--vino-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        #login-gate.hidden {
+            display: none !important;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+            text-align: center;
+        }
+
+        .login-brand {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--vino);
+            margin-bottom: 4px;
+        }
+
+        .login-brand span {
+            font-weight: 300;
+            opacity: .7;
+        }
+
+        .login-subtitle {
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-bottom: 28px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        .login-input:focus {
+            border-color: var(--vino);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 13px;
+            background: var(--vino);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: background .2s;
+        }
+
+        .login-btn:hover {
+            background: var(--vino-dark);
+        }
+
+        #login-error {
+            color: var(--red);
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* ── APP SHELL ── */
+        #app-shell {
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        #app-shell.visible {
+            display: flex;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            background: linear-gradient(135deg, var(--vino-dark) 0%, var(--vino) 60%, var(--vino-light) 100%);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-md);
+            flex-wrap: wrap;
+        }
+
+        .topbar-logo {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .topbar-logo span {
+            font-weight: 300;
+            opacity: .8;
+        }
+
+        .topbar-title {
+            font-size: 13px;
+            opacity: .8;
+        }
+
+        .topbar-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn-top {
+            padding: 7px 13px;
+            border: none;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: opacity .2s;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-top:hover {
+            opacity: .85;
+        }
+
+        .btn-vino {
+            background: var(--vino-pale);
+            color: var(--vino);
+        }
+
+        .btn-beige {
+            background: var(--beige);
+            color: var(--vino-dark);
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, .15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, .25);
+        }
+
+        .btn-amber {
+            background: rgba(255, 193, 7, .25);
+            color: #FFC107;
+            border: 1px solid rgba(255, 193, 7, .4);
+        }
+
+        .btn-logout {
+            background: rgba(220, 53, 69, .3);
+            color: white;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 110%;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow-md);
+            min-width: 170px;
+            overflow: hidden;
+            z-index: 300;
+        }
+
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 10px 16px;
+            font-size: 13px;
+            color: var(--text);
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .dropdown-item:hover {
+            background: var(--gray-100);
+            color: var(--vino);
+        }
+
+        /* ── CONTAINER ── */
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 24px;
+            flex: 1;
+        }
+
+        /* ── STATS ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+            border-left: 4px solid var(--vino);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: var(--gray-600);
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--vino);
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--gray-600);
+        }
+
+        /* ── FILTERS ── */
+        .filters-bar {
+            background: white;
+            border-radius: var(--radius);
+            padding: 14px 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+            flex-wrap: wrap;
+        }
+
+        .filters-bar select,
+        .filters-bar input {
+            padding: 8px 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            background: var(--gray-100);
+            outline: none;
+        }
+
+        .filters-bar select:focus,
+        .filters-bar input:focus {
+            border-color: var(--vino);
+        }
+
+        .btn-filter {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: var(--vino);
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-refresh {
+            padding: 8px 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            color: var(--gray-600);
+        }
+
+        /* ── TABLE ── */
+        .table-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-weight: 700;
+            color: var(--vino);
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            background: var(--gray-100);
+        }
+
+        th {
+            padding: 11px 14px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--gray-600);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--gray-200);
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        tbody tr:hover {
+            background: var(--gray-100);
+        }
+
+        tbody tr.anulado {
+            opacity: .55;
+        }
+
+        .badge {
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .badge-Pendiente {
+            background: var(--orange-bg);
+            color: var(--orange);
+        }
+
+        .badge-Entregado {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .badge-Anulado {
+            background: var(--red-bg);
+            color: var(--red);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-edit {
+            background: #E8F0FE;
+            color: #1967D2;
+        }
+
+        .btn-delete {
+            background: var(--red-bg);
+            color: var(--red);
+        }
+
+        .btn-restore {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .btn-view {
+            background: var(--gray-200);
+            color: var(--gray-800);
+        }
+
+        /* ── MODALS ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
+        }
+
+        .modal-overlay.hidden {
+            display: none !important;
+        }
+
+        .modal-box {
+            background: white;
+            border-radius: var(--radius);
+            padding: 28px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, .2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-box-wide {
+            max-width: 680px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--vino);
+            margin-bottom: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--gray-600);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--vino);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-save {
+            flex: 1;
+            padding: 12px;
+            background: var(--vino);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-cancel-edit {
+            flex: 1;
+            padding: 12px;
+            background: var(--gray-200);
+            color: var(--gray-800);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-close-detail {
+            padding: 10px 20px;
+            background: var(--gray-200);
+            color: var(--gray-800);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--gray-600);
+        }
+
+        .empty-state i {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: .4;
+            display: block;
+        }
+
+        .badge-Pendiente {
+            background: #FCE8E6;
+            color: #D93025;
+        }
+
+        .badge-Abonado {
+            background: #FFF3E0;
+            color: #E65100;
+        }
+
+        .badge-Cancelado {
+            background: #E6F4EA;
+            color: #1E8E3E;
+        }
+
+        .badge-Entregado {
+            background: #E6F4EA;
+            color: #1E8E3E;
+        }
+
+        .badge-PendienteDel {
+            background: #EEF2FF;
+            color: #5C6BC0;
+        }
+
+        .badge-Anulado {
+            background: #F8F9FA;
+            color: #6C757D;
+        }
+
+        tr.row-cancelado td {
+            opacity: .75;
+        }
+
+        tr.row-abonado td:nth-child(7) {
+            color: #E65100 !important;
+        }
+
+        .btn-abono {
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid #A8D5B5;
+        }
+
+        .btn-abono:hover {
+            background: #C8EDD3;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ══ LOGIN GATE ═══════════════════════════════════════════════════════════ -->
+    <div id="login-gate">
+        <div class="login-card">
+            <div class="login-brand">ML <span>Uniformes</span></div>
+            <p class="login-subtitle">Centro de Gestión de Pedidos — Acceso Restringido</p>
+            <input class="login-input" type="text" id="gate-user" placeholder="Usuario" autocomplete="off">
+            <input class="login-input" type="password" id="gate-pass" placeholder="Contraseña">
+            <p id="login-error">❌ Credenciales inválidas o sin rol Admin.</p>
+            <button class="login-btn" id="gate-btn">Ingresar <i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <!-- OfflineBanner -->
+    <div id="offline-banner">
+        <span class="offline-icon">📡</span>
+        Sin conexión con el servidor (puerto 8000) — Los cambios no se guardarán
+        <button class="offline-retry" onclick="location.reload()">🔄 Reintentar</button>
+    </div>
+
+    <!-- ══ APP SHELL ════════════════════════════════════════════════════════════ -->
+    <div id="app-shell">
+
+        <header class="topbar">
+            <div class="topbar-logo">ML <span>Uniformes</span></div>
+            <span class="topbar-title">Centro de Gestión de Pedidos</span>
+            <div class="topbar-actions">
+                <!-- 3 Reportes de Producción/Logística -->
+                <button class="btn-top btn-amber" onclick="downloadHojaRuta()">
+                    <i class="fas fa-route"></i> Hoja de Ruta
+                </button>
+                <button class="btn-top btn-beige" onclick="downloadPlanillaProduccion()">
+                    <i class="fas fa-clipboard-list"></i> Planilla de Producción
+                </button>
+                <button class="btn-top btn-beige" onclick="downloadOrdenConsolidada()">
+                    <i class="fas fa-layer-group"></i> Orden Consolidada
+                </button>
+                <!-- Ventas -->
+                <button class="btn-top btn-vino" onclick="downloadSales()">
+                    <i class="fas fa-file-pdf"></i> Ventas
+                </button>
+                <!-- Extracto dropdown -->
+                <div class="dropdown">
+                    <button class="btn-top btn-ghost"><i class="fas fa-chart-bar"></i> Extracto ▾</button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" onclick="downloadExtract('weekly')">📅 Semanal</a>
+                        <a class="dropdown-item" onclick="downloadExtract('monthly')">📆 Mensual</a>
+                        <a class="dropdown-item" onclick="downloadExtract('annual')">📊 Anual</a>
+                    </div>
+                </div>
+                <a href="/" class="btn-top btn-ghost" style="text-decoration:none;">
+                    <i class="fas fa-cash-register"></i> POS
+                </a>
+                <button class="btn-top btn-logout" id="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
+        </header>
+
+        <div class="container">
+
+            <!-- STATS -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-label">Pedidos Activos</div>
+                    <div class="stat-value" id="stat-count">—</div>
+                    <div class="stat-sub">sin anular</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Valor Total Pedidos</div>
+                    <div class="stat-value" id="stat-total">—</div>
+                    <div class="stat-sub">valor bruto</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Abonados Parciales</div>
+                    <div class="stat-value" id="stat-abonados">—</div>
+                    <div class="stat-sub">saldo pendiente</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Colegios</div>
+                    <div class="stat-value" id="stat-colleges">—</div>
+                    <div class="stat-sub">instituciones activas</div>
+                </div>
+                <div class="stat-card" style="background:linear-gradient(135deg,var(--vino-pale),#fff)">
+                    <div class="stat-label">Total Recaudado</div>
+                    <div class="stat-value" id="stat-paid" style="color:var(--green)">—</div>
+                    <div class="stat-sub">dinero real cobrado</div>
+                </div>
+            </div>
+
+            <!-- FILTROS -->
+            <div class="filters-bar">
+                <select id="filter-inst">
+                    <option value="">Todas las instituciones</option>
+                </select>
+                <select id="filter-status">
+                    <option value="">Todos los estados de pago</option>
+                    <option value="Pendiente">🔴 Pendiente (sin abono)</option>
+                    <option value="Abonado">🟡 Abonado (pago parcial)</option>
+                    <option value="Cancelado">✅ Cancelado (saldo saldado)</option>
+                    <option value="Anulado">⚫ Anulados</option>
+                </select>
+                <input type="text" id="filter-client" placeholder="Buscar niño/a...">
+                <button class="btn-filter" onclick="applyFilters()">
+                    <i class="fas fa-search"></i> Filtrar
+                </button>
+                <button class="btn-refresh" title="Recargar" onclick="loadReceipts()">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+
+            <!-- TABLA -->
+            <div class="table-card">
+                <div class="table-header">
+                    <span class="table-title"><i class="fas fa-list-alt"></i> Pedidos Registrados</span>
+                    <span style="font-size:12px; color:var(--gray-600);" id="table-count">Cargando...</span>
+                </div>
+                <div style="overflow-x:auto">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>N°</th>
+                                <th>Institución</th>
+                                <th>Niño/a</th>
+                                <th>Teléfono</th>
+                                <th>Total Pedido</th>
+                                <th>Abonado</th>
+                                <th>Saldo</th>
+                                <th>Estado Pago</th>
+                                <th>Entrega</th>
+                                <th>Ver</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receipts-tbody">
+                            <tr>
+                                <td colspan="11" style="text-align:center;padding:30px;color:var(--gray-600)">
+                                    Cargando...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- end #app-shell -->
+
+    <!-- ══ MODAL EDICIÓN ════════════════════════════════════════════════════════ -->
+    <div class="modal-overlay hidden" id="edit-modal">
+        <div class="modal-box">
+            <div class="modal-title"><i class="fas fa-edit"></i> Editar Pedido</div>
+            <input type="hidden" id="edit-receipt-id">
+            <div class="form-group">
+                <label>Nombre del Niño/a</label>
+                <input type="text" id="edit-client-name" placeholder="Nombre completo">
+            </div>
+            <div class="form-group">
+                <label>Teléfono del Acudiente</label>
+                <input type="tel" id="edit-client-phone" placeholder="300 000 0000">
+            </div>
+            <div class="form-group">
+                <label>Estado</label>
+                <select id="edit-status">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Entregado">Entregado</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-save" onclick="saveEdit()"><i class="fas fa-save"></i> Guardar</button>
+                <button class="btn-cancel-edit" onclick="closeEditModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MODAL DETALLE (👁) ═══════════════════════════════════════════════════ -->
+    <div class="modal-overlay hidden" id="detail-modal">
+        <div class="modal-box modal-box-wide">
+            <div class="modal-title"><i class="fas fa-eye"></i> Detalle del Pedido</div>
+            <div id="detail-body">Cargando...</div>
+            <div style="margin-top:18px; text-align:right;">
+                <button class="btn-close-detail" onclick="closeDetailModal()">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MODAL CONFIRMAR ANULACIÓN ══════════════════════════════════════════ -->
+    <div class="modal-overlay hidden" id="confirm-modal">
+        <div class="modal-box" style="max-width:400px;text-align:center">
+            <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+            <div class="modal-title" style="justify-content:center">Confirmar Anulación</div>
+            <p id="confirm-msg" style="color:var(--gray-600);font-size:13px;line-height:1.6;margin-bottom:24px"></p>
+            <div style="display:flex;gap:12px">
+                <button id="confirm-ok"
+                    style="flex:1;padding:12px;background:var(--red);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">
+                    <i class="fas fa-ban"></i> Sí, Anular
+                </button>
+                <button id="confirm-cancel"
+                    style="flex:1;padding:12px;background:var(--gray-200);color:var(--gray-800);border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MODAL FECHA CONSOLIDADO ════════════════════════════════════════════ -->
+    <div class="modal-overlay hidden" id="delivery-modal">
+        <div class="modal-box" style="max-width:420px">
+            <div class="modal-title"><i class="fas fa-box-open"></i> Consolidado de Entrega</div>
+            <p style="color:var(--gray-600);font-size:13px;line-height:1.6;margin-bottom:16px">
+                Selecciona la fecha de entrega para ver <strong>todos los pedidos que vencen ese día</strong>
+                agrupados por colegio, con el total de prendas por talla.
+            </p>
+            <div class="form-group">
+                <label>📅 Fecha de entrega</label>
+                <input type="date" id="delivery-date-input"
+                    style="width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:15px;font-family:Inter,sans-serif">
+            </div>
+            <p style="font-size:11px;color:var(--gray-600);margin-top:-6px;margin-bottom:20px">
+                💡 El reporte mostrará todas las prendas pendientes de entrega para esa fecha, agrupadas por
+                institución.
+            </p>
+            <div style="display:flex;gap:12px">
+                <button id="delivery-ok"
+                    style="flex:1;padding:12px;background:var(--vino);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">
+                    <i class="fas fa-file-pdf"></i> Generar PDF
+                </button>
+                <button id="delivery-cancel"
+                    style="flex:1;padding:12px;background:var(--gray-200);color:var(--gray-800);border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ══ MODAL ABONO (💰) ════════════════════════════════════════════════════════ -->
+    <div class="modal-overlay hidden" id="abono-modal">
+        <div class="modal-box modal-box-wide">
+            <div class="modal-title"><i class="fas fa-money-bill-wave"></i> Aplicar Abono al Pedido</div>
+            <div id="abono-body">Cargando...</div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="admin.js?v=16"></script>
+</body>
+
+</html>

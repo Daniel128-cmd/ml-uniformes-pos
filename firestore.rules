@@ -1,0 +1,68 @@
+rules_version = '2';
+
+// ──────────────────────────────────────────────────────────────
+//  Firestore Security Rules — ML Uniformes POS
+//  Política: Solo el Admin autenticado puede escribir o borrar.
+//  Nadie puede leer sin autenticación (los datos son privados).
+// ──────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Función auxiliar: ¿es el admin autenticado?
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'dm6636267@gmail.com';
+    }
+
+    // ── Recibos / pedidos
+    match /receipts/{receiptId} {
+      allow read:   if isAdmin();
+      allow create: if isAdmin();
+      // update usa merge=true para no sobrescribir campos no definidos
+      allow update: if isAdmin()
+        && request.resource.data.keys().hasAny(resource.data.keys());
+      allow delete: if isAdmin();
+
+      // Historial de versiones (sub-colección para auditoría)
+      match /versions/{versionId} {
+        allow read:  if isAdmin();
+        allow write: if isAdmin();
+      }
+
+      // Abonos / payments
+      match /payments/{paymentId} {
+        allow read:  if isAdmin();
+        allow write: if isAdmin();
+      }
+
+      // Items del pedido
+      match /items/{itemId} {
+        allow read:  if isAdmin();
+        allow write: if isAdmin();
+      }
+    }
+
+    // ── Instituciones / colegios
+    match /institutions/{instId} {
+      allow read:   if isAdmin();
+      allow write:  if isAdmin();
+    }
+
+    // ── Productos / prendas
+    match /products/{productId} {
+      allow read:   if isAdmin();
+      allow write:  if isAdmin();
+    }
+
+    // ── Usuarios del sistema
+    match /users/{userId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Bloquear todo lo demás
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

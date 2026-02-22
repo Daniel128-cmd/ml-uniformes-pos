@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ML Pedidos — POS Uniformes</title>
+    <meta name="description"
+        content="Sistema de punto de venta para ML Uniformes. Gestión de pedidos de uniformes escolares y empresariales." />
+    <link rel="stylesheet" href="styles.css?v=16" />
+</head>
+
+<body>
+    <!-- OfflineBanner -->
+    <div id="offline-banner">
+        <span class="offline-icon">📡</span>
+        Sin conexión con el servidor — Los cambios no se guardarán
+        <button class="offline-retry" onclick="window.location.reload()">🔄 Reintentar</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+       BARRA SUPERIOR
+  ══════════════════════════════════════════════════════════ -->
+    <header class="topbar" role="banner">
+        <div class="topbar-logo">ML <span>Uniformes</span></div>
+        <div class="topbar-right" style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+            <span id="topbar-inst-name" class="topbar-subtitle">Selecciona una institución</span>
+            <button id="btn-deselect-inst" title="Limpiar selección" style="display:none;">&#x2715;</button>
+            <a href="/admin.html" class="btn-panel-admin" title="Centro de Gestión de Pedidos" target="_blank">
+                📊 Centro de Gestión de Pedidos
+            </a>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════
+       LAYOUT PRINCIPAL
+  ══════════════════════════════════════════════════════════ -->
+    <main class="main-layout" role="main">
+
+        <!-- ─────────────────────────────
+         PANEL IZQUIERDO
+    ──────────────────────────────── -->
+        <aside class="panel panel-left" id="left-panel" aria-label="Institución y datos del cliente">
+
+            <!-- Selector de institución -->
+            <section>
+                <div class="section-title">Institución</div>
+                <div class="inst-selector" id="inst-selector" role="listbox" aria-label="Seleccionar institución">
+                    <!-- Generado por JS -->
+                </div>
+            </section>
+
+            <!-- Formulario del cliente -->
+            <section class="card">
+                <div class="section-title" style="margin-bottom:12px">Datos del Pedido</div>
+
+                <div class="form-group">
+                    <label for="input-nombre">Nombre del Niño/a</label>
+                    <input type="text" id="input-nombre" placeholder="Nombre del niño/a…" autocomplete="name"
+                        maxlength="80" />
+                </div>
+
+                <div class="form-group">
+                    <label for="input-telefono">Teléfono del Acudiente</label>
+                    <input type="tel" id="input-telefono" placeholder="300 000 0000" autocomplete="tel"
+                        maxlength="20" />
+                </div>
+
+                <div class="form-group">
+                    <label for="input-pago">Método de Pago <span style="color:#D93025">*</span></label>
+                    <select id="input-pago"
+                        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--surface);color:var(--text);cursor:pointer;outline:none">
+                        <option value="">— Seleccionar —</option>
+                        <option value="Efectivo">💵 Efectivo</option>
+                        <option value="Transferencia">📲 Transferencia</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="input-abono">Abono Inicial <span
+                            style="color:#6C757D;font-weight:400;font-size:11px">(mín. 30% del total)</span></label>
+                    <input type="text" inputmode="numeric" id="input-abono" value="0" autocomplete="off" placeholder="0"
+                        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;box-sizing:border-box" />
+                </div>
+
+                <button id="btn-limpiar" class="btn-clear" aria-label="Limpiar formulario y carrito">
+                    🗑 Limpiar todo
+                </button>
+            </section>
+
+        </aside>
+
+        <!-- ─────────────────────────────
+         PANEL CENTRAL — CATÁLOGO
+    ──────────────────────────────── -->
+        <section class="panel panel-center" id="center-panel" aria-label="Catálogo de prendas">
+
+            <!-- Búsqueda -->
+            <div class="search-bar">
+                <span class="search-icon" aria-hidden="true">🔍</span>
+                <input type="search" id="search-input" placeholder="Buscar prenda…" aria-label="Buscar prenda" />
+            </div>
+
+            <!-- Filtros por categoría -->
+            <div class="filter-tabs" role="tablist" aria-label="Filtrar por categoría">
+                <button class="filter-tab active" data-cat="todo" role="tab" aria-selected="true">Todo</button>
+                <button class="filter-tab" data-cat="diario" role="tab" aria-selected="false">Diario</button>
+                <button class="filter-tab" data-cat="deportivo" role="tab" aria-selected="false">Deportivo</button>
+                <button class="filter-tab" data-cat="kit" role="tab" aria-selected="false">Kit</button>
+                <button class="filter-tab" data-cat="gala" role="tab" aria-selected="false">Gala</button>
+            </div>
+
+            <!-- Grid de productos -->
+            <div class="products-grid" id="products-grid" role="list" aria-label="Prendas disponibles">
+                <!-- Estado inicial: sin institución seleccionada -->
+                <div class="empty-catalog">
+                    <div class="empty-icon">🏫</div>
+                    <p>Selecciona una institución</p>
+                    <span>Las prendas aparecerán aquí</span>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ─────────────────────────────
+         PANEL DERECHO — CARRITO
+    ──────────────────────────────── -->
+        <aside class="panel panel-right" id="right-panel" aria-label="Carrito de pedido">
+
+            <!-- Encabezado carrito -->
+            <div class="cart-header">
+                <div class="section-title" style="margin:0">Carrito</div>
+                <span class="cart-badge" id="cart-badge" aria-live="polite">0</span>
+            </div>
+
+            <!-- Lista de ítems -->
+            <div class="cart-items" id="cart-items" aria-live="polite" aria-label="Ítems en el carrito">
+                <div class="cart-empty">
+                    <div class="cart-empty-icon">🛒</div>
+                    <p>Carrito vacío</p>
+                    <span>Agrega prendas del catálogo</span>
+                </div>
+            </div>
+
+            <!-- Totales y botón generar recibo -->
+            <div class="cart-totals">
+                <div class="cart-total-row">
+                    <span class="cart-total-label">Prendas:</span>
+                    <span class="cart-total-items" id="cart-total-items">0</span>
+                </div>
+                <div class="cart-total-row">
+                    <span class="cart-grand-total-label">TOTAL:</span>
+                    <span class="cart-grand-total-value" id="cart-total-value" aria-live="polite">$ 0</span>
+                </div>
+                <button id="btn-generar-recibo" class="btn-generar-recibo" disabled
+                    aria-label="Generar recibo de venta">
+                    <i class="fas fa-receipt"></i> <span>Generar Recibo</span>
+                </button>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- ═══════════════════════════════════════════════════════
+       MODAL — SELECTOR DE TALLA
+  ══════════════════════════════════════════════════════════ -->
+    <div class="modal-overlay hidden" id="size-modal" role="dialog" aria-modal="true"
+        aria-labelledby="size-modal-title">
+        <div class="modal-box">
+            <h2 class="modal-title" id="size-modal-title">Seleccionar Talla</h2>
+            <p class="modal-product-name" id="size-modal-product-name">— prenda —</p>
+
+            <!-- Botones de rango o precio (generados dinámicamente) -->
+            <div class="modal-section-label">Categoría de Precio / Rango</div>
+            <div class="size-pills" id="size-pills" role="group" aria-label="Opciones de precio por talla"></div>
+
+            <!-- Talla específica obligatoria (oculta inicialmente) -->
+            <div id="exact-size-section" style="display:none; margin-bottom: 18px;">
+                <div class="modal-section-label">Talla Específica Obligatoria</div>
+                <div class="size-pills" id="exact-size-pills" role="group" aria-label="Talla específica"></div>
+            </div>
+
+            <!-- Precio dinámico según talla -->
+            <div class="size-price-display" id="size-price-display">
+                Selecciona un rango para ver el precio
+            </div>
+
+            <!-- Control de cantidad -->
+            <div class="modal-section-label">Cantidad</div>
+            <div class="qty-modal">
+                <div class="qty-modal-controls">
+                    <button class="qty-modal-btn" id="qty-minus" aria-label="Disminuir cantidad">−</button>
+                    <span class="qty-modal-value" id="qty-modal-value" aria-live="polite">1</span>
+                    <button class="qty-modal-btn" id="qty-plus" aria-label="Aumentar cantidad">+</button>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="modal-actions">
+                <button class="btn-modal-agregar" id="btn-modal-agregar" disabled aria-label="Agregar al carrito">
+                    ✓ Agregar al Carrito
+                </button>
+                <button class="btn-modal-cancelar" id="btn-modal-cancelar">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+       MODAL — RECIBO DE VENTA
+  ══════════════════════════════════════════════════════════ -->
+    <div class="receipt-overlay hidden" id="receipt-modal" role="dialog" aria-modal="true"
+        aria-labelledby="receipt-modal-title">
+        <div class="receipt-box">
+
+            <!-- Cabecera vinotinto -->
+            <div class="receipt-header">
+                <div class="receipt-store-name">ML Uniformes</div>
+                <div class="receipt-store-sub">Pedidos &amp; Uniformes</div>
+                <div class="receipt-inst-name" id="receipt-inst-name">—</div>
+            </div>
+
+            <!-- Cuerpo del recibo -->
+            <div class="receipt-body">
+
+                <!-- Meta: número, fecha -->
+                <div class="receipt-meta">
+                    <div class="receipt-meta-item">
+                        <span class="receipt-meta-label">Recibo N°</span>
+                        <span class="receipt-meta-value receipt-number" id="receipt-number-display">001</span>
+                    </div>
+                    <div class="receipt-meta-item" style="text-align:right">
+                        <span class="receipt-meta-label">Fecha</span>
+                        <span class="receipt-meta-value" id="receipt-date-display">—</span>
+                    </div>
+                </div>
+
+                <!-- Cliente -->
+                <div class="receipt-client-section">
+                    <div class="receipt-meta-label" style="margin-bottom:4px">Cliente</div>
+                    <div class="receipt-client-name" id="receipt-client-name">—</div>
+                    <div class="receipt-client-phone" id="receipt-client-phone">—</div>
+                </div>
+
+                <!-- Ítems -->
+                <div class="receipt-items-title">Detalle del Pedido</div>
+                <div id="receipt-items-list" aria-label="Detalle de prendas del recibo">
+                    <!-- Generado por JS -->
+                </div>
+
+                <!-- Total -->
+                <div class="receipt-total">
+                    <span class="receipt-total-label">TOTAL DEL PEDIDO</span>
+                    <span class="receipt-total-value" id="receipt-total-display">$ 0</span>
+                </div>
+
+                <!-- Abono inicial (se muestra solo si hay pago) -->
+                <div id="receipt-abono-row"
+                    style="display:none;padding:8px 0;border-bottom:1px dashed #E0E0E0;display:flex;justify-content:space-between;align-items:center;font-size:13px">
+                    <span style="color:#1E8E3E;font-weight:600">✅ Abono Inicial</span>
+                    <span style="color:#1E8E3E;font-weight:700" id="receipt-abono-display">$ 0</span>
+                </div>
+
+                <!-- Saldo restante -->
+                <div id="receipt-saldo-row"
+                    style="display:none;padding:10px 0 4px;display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:13px;font-weight:700;color:#D93025">⚠️ SALDO PENDIENTE</span>
+                    <span style="font-size:18px;font-weight:800;color:#D93025" id="receipt-saldo-display">$ 0</span>
+                </div>
+
+            </div>
+
+            <!-- Pie del recibo -->
+            <div class="receipt-footer" id="receipt-modal-title">
+                ¡Gracias por tu pedido! — ML Uniformes
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="receipt-actions">
+                <button class="btn-print" id="btn-print" aria-label="Imprimir recibo">🖨 Imprimir</button>
+                <button class="btn-close-receipt" id="btn-close-receipt" aria-label="Cerrar recibo">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+       MODAL — VISTA PREVIA (FASE 6: CONFIRMACIÓN)
+  ══════════════════════════════════════════════════════════ -->
+    <div class="modal-overlay hidden" id="preview-modal" role="dialog" aria-modal="true">
+        <div class="modal-box" style="max-width: 450px;">
+            <h2 class="modal-title" style="color:var(--vino); text-align:center;">Revisión de Pedido</h2>
+            <p style="text-align:center; color:var(--gray-600); font-size:13px; margin-bottom:16px;">
+                Verifica de que todo esté correcto antes de guardar en el sistema.
+            </p>
+
+            <div class="preview-list" id="preview-items-list">
+                <!-- Javascript inyectará aquí -> div.preview-item -->
+            </div>
+
+            <div class="preview-total" id="preview-total-display">$ 0</div>
+
+            <div class="modal-actions" style="margin-top: 14px; gap:10px;">
+                <button class="btn-modal-agregar" id="btn-confirmar-pedido"
+                    style="background:var(--green); color:white; flex:2; font-size:15px; font-weight:700; border:none; border-radius:10px; padding:13px 20px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <i class="fas fa-check-circle"></i> ✔ SÍ, Guardar y Confirmar
+                </button>
+                <button class="btn-modal-cancelar" id="btn-rechazar-pedido"
+                    style="flex:1; background:var(--gray-200); color:var(--gray-800); border:none; border-radius:10px; padding:13px 16px; cursor:pointer; font-weight:600;">
+                    ← Corregir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+       MODAL — LOGIN ADMIN/STAFF
+  ══════════════════════════════════════════════════════════ -->
+    <div class="modal-overlay hidden" id="login-modal" role="dialog" aria-modal="true">
+        <div class="modal-box" style="max-width: 320px; text-align:center;">
+            <h2 class="modal-title">Acceso Restringido</h2>
+            <p style="font-size:12px; color:var(--gray-600); margin-bottom:16px;">
+                Ingrese credenciales para abrir el Live Dashboard.
+            </p>
+            <input type="text" id="login-user" class="login-input" placeholder="Usuario" autocomplete="off">
+            <input type="password" id="login-pass" class="login-input" placeholder="Contraseña">
+
+            <p id="login-error" style="color:var(--red); font-size:12px; display:none; margin-bottom:10px;">Credenciales
+                inválidas.</p>
+
+            <div class="modal-actions">
+                <button class="btn-modal-agregar" id="btn-do-login">Ingresar</button>
+                <button class="btn-modal-cancelar" id="btn-close-login">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+       LATERAL — LIVE DASHBOARD (AJAX)
+  ══════════════════════════════════════════════════════════ -->
+    <div class="dashboard-panel" id="dashboard-panel">
+        <div class="dashboard-header">
+            <span class="dashboard-title">Live Dashboard</span>
+            <button class="btn btn-dark" style="padding: 4px 8px;" id="btn-close-dashboard">✖ Cerrar</button>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="dashboard-filters">
+                <select id="filter-inst">
+                    <option value="">Todas las Inst.</option>
+                </select>
+                <select id="filter-status">
+                    <option value="">Todos los Estados</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Entregado">Entregado</option>
+                </select>
+            </div>
+
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>N°</th>
+                        <th>Cliente</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="live-table-body">
+                    <tr>
+                        <td colspan="4" style="text-align:center; padding-top:20px;">Use los filtros para buscar...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+       SCRIPTS
+  ══════════════════════════════════════════════════════════ -->
+    <script src="config.js"></script>
+    <script src="data.js?v=16"></script>
+    <script src="app.js?v=16"></script>
+
+</body>
+
+</html>

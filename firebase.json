@@ -1,0 +1,59 @@
+{
+    "hosting": {
+        "public": ".",
+        "ignore": [
+            "firebase.json",
+            ".firebaserc",
+            "firestore.rules",
+            "GUIA_ACTUALIZACION.md",
+            "backend/**",
+            "**/.git/**",
+            "**/node_modules/**",
+            "**/*.py",
+            "**/*.db",
+            "**/*.pdf"
+        ],
+        "headers": [
+            {
+                "source": "**/*.js",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "public, max-age=86400"
+                    }
+                ]
+            },
+            {
+                "source": "**/*.css",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "public, max-age=86400"
+                    }
+                ]
+            },
+            {
+                "source": "**/*.html",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "no-cache"
+                    }
+                ]
+            }
+        ],
+        "rewrites": [
+            {
+                "source": "/admin",
+                "destination": "/admin.html"
+            },
+            {
+                "source": "/pos",
+                "destination": "/index.html"
+            }
+        ]
+    },
+    "firestore": {
+        "rules": "firestore.rules"
+    }
+}
