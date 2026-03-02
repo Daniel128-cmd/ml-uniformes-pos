@@ -169,19 +169,98 @@ def _fetch_all_data(db):
             
     return list(receipts_dict.values())
 
+def _in_colombia_day(iso_string, target_date_str):
+    if not iso_string or not target_date_str: return False
+    try:
+        iso_clean = iso_string.replace('Z', '')
+        if '.' in iso_clean:
+            dt = datetime.strptime(iso_clean, '%Y-%m-%dT%H:%M:%S.%f')
+        else:
+            dt = datetime.strptime(iso_clean, '%Y-%m-%dT%H:%M:%S')
+        dt_col = dt - timedelta(hours=5)
+        return dt_col.strftime('%Y-%m-%d') == target_date_str
+    except Exception:
+        return False
+
+def _get_pending_pieces(item):
+    """
+    Rinde (nombre_pieza, talla, cantidad_multiplicada)
+    solo para las prendas que falten fabricar.
+    Si el item es un Kit, desglosa 'piezas' ignorando las 'Entregadas'.
+    """
+    piezas = item.get('piezas', [])
+    qty = int(item.get('quantity', 1))
+    size_raw = item.get('exact_size') or item.get('size_range') or 'Única'
+    
+    if piezas:
+        for pz in piezas:
+            if pz.get('estado') == 'Pendiente':
+                cust_size = pz.get('tallaPersonalizada', '').strip()
+                final_size = f"{size_raw} ({cust_size})" if cust_size else size_raw
+                yield pz.get('nombre'), final_size, qty
+    else:
+        # Prenda simple
+        prod = item.get('product_name', 'Prenda')
+        if 'Kit' not in prod and 'Diario' not in prod.split():
+            # Ensure we only return it if it's not a generic name
+            yield prod, size_raw, qty
+        else:
+            yield prod, size_raw, qty
+
+
 
 # ── REPORTS GENERATION ───────────────────────────────────────────────────────
-def generate_sales_report(db, date_str=None):
-    if date_str is None:
-        date_str = datetime.now().strftime("%Y-%m-%d")
+def generate_sales_report(db, date_str=None, period=None):
+    now = datetime.now()
+    if period == 'weekly':
+        start_date = now - timedelta(days=7)
+        end_date = now
+        date_range_str = f"({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})"
+        title = f"Reporte de Ventas — Efectivo Recaudado\nSemanal {date_range_str}"
+        filename_prefix = "sales_report_weekly"
+        empty_msg = f"No se registraron abonos en la semana del {start_date.strftime('%d/%m/%Y')} al {end_date.strftime('%d/%m/%Y')}."
+    elif period == 'monthly':
+        start_date = now - timedelta(days=30)
+        end_date = now
+        date_range_str = f"({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})"
+        title = f"Reporte de Ventas — Efectivo Recaudado\nMensual {date_range_str}"
+        filename_prefix = "sales_report_monthly"
+        empty_msg = f"No se registraron abonos en el mes del {start_date.strftime('%d/%m/%Y')} al {end_date.strftime('%d/%m/%Y')}."
+    elif period == 'annual':
+        start_date = now - timedelta(days=365)
+        end_date = now
+        date_range_str = f"({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})"
+        title = f"Reporte de Ventas — Efectivo Recaudado\nAnual {date_range_str}"
+        filename_prefix = "sales_report_annual"
+        empty_msg = f"No se registraron abonos en el año del {start_date.strftime('%d/%m/%Y')} al {end_date.strftime('%d/%m/%Y')}."
+    else:
+        if date_str is None:
+            now_col = datetime.utcnow() - timedelta(hours=5)
+            date_str = now_col.strftime("%Y-%m-%d")
+        start_date = datetime.strptime(date_str, "%Y-%m-%d")
+        end_date = start_date
+        title = f"Reporte de Ventas — Efectivo Recaudado\nHoy ({start_date.strftime('%d/%m/%Y')})"
+        filename_prefix = f"sales_report_{date_str}"
+        empty_msg = f"No se registraron abonos el {start_date.strftime('%d/%m/%Y')}."
+
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
 
     data = _fetch_all_data(db)
     
     grouped = defaultdict(list)
     for r in data:
         for p in r['payments']:
-            p_date = str(p.get('created_at', '')).split('T')[0]
-            if p_date == date_str:
+            p_date_iso = p.get('created_at', '')
+            
+            include_payment = False
+            if not period:
+                include_payment = _in_colombia_day(p_date_iso, start_date_str)
+            else:
+                p_date = str(p_date_iso).split('T')[0]
+                include_payment = start_date_str <= p_date <= end_date_str
+                
+            if include_payment:
                 grouped[r.get('institution_name', 'Desconocida')].append({
                     'receipt_number': r['receipt_number'],
                     'client_name': r.get('client_name'),
@@ -191,17 +270,17 @@ def generate_sales_report(db, date_str=None):
                     'pay_method': p.get('payment_method', 'Efectivo')
                 })
 
-    filename = os.path.join(BASE_DIR, f"sales_report_{date_str}.pdf")
+    filename = os.path.join(BASE_DIR, f"{filename_prefix}.pdf")
     doc = SimpleDocTemplate(filename, pagesize=letter, leftMargin=0.6*inch, rightMargin=0.6*inch, topMargin=0.5*inch, bottomMargin=0.5*inch)
     story = []
-    _build_header(story, "Reporte de Ventas — Efectivo Recaudado Hoy", f"Generado: {datetime.now().strftime('%d/%m/%Y')}")
+    _build_header(story, title, f"Generado: {now.strftime('%d/%m/%Y')}")
 
     total_dia = total_efectivo = total_transferencia = 0.0
 
     if not grouped:
         story.append(Spacer(1, 0.5*inch))
         no_data = ParagraphStyle('ND', fontName='Helvetica', fontSize=11, textColor=GRAY_DARK, alignment=1)
-        story.append(Paragraph("No se registraron abonos hoy.", no_data))
+        story.append(Paragraph(empty_msg, no_data))
     else:
         for inst_name, recs in sorted(grouped.items()):
             _school_header(story, inst_name)
@@ -244,7 +323,7 @@ def generate_sales_report(db, date_str=None):
     summ_title = ParagraphStyle('SummT', fontName='Helvetica-Bold', fontSize=12, textColor=VINO, spaceBefore=8, alignment=TA_CENTER)
     story.append(Paragraph("Resumen Financiero del Período", summ_title))
     summ_data = [ ["Concepto", "Total"], ["💵  Abonos en Efectivo", _fmt(total_efectivo)],
-                  ["📲  Abonos por Transferencia", _fmt(total_transferencia)], ["TOTAL RECAUDADO HOY", _fmt(total_dia)] ]
+                  ["📲  Abonos por Transferencia", _fmt(total_transferencia)], ["TOTAL RECAUDADO", _fmt(total_dia)] ]
     summ_t = Table(summ_data, colWidths=[4.5*inch, 2.0*inch])
     summ_t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), VINO), ('TEXTCOLOR', (0, 0), (-1, 0), BEIGE),
@@ -261,74 +340,53 @@ def generate_sales_report(db, date_str=None):
     doc.build(story)
     return filename
 
-def generate_planilla_produccion(db):
+def generate_planilla_produccion(db, date_str=None):
     data = _fetch_all_data(db)
     
-    # Needs items from receipts that are pending (Not Entregado)
-    grouped = {} # {inst: {(producto, delivery_date): {talla: qty}}}
+    # Consolidado global de piezas NO entregadas agrupadas por colegio
+    grouped = defaultdict(lambda: defaultdict(int)) # {institucion: {(producto, talla): qty}}
+    
     for r in data:
         if r.get('status') == 'Entregado': continue
+        if date_str and not _in_colombia_day(r.get('created_at'), date_str): continue
+        
         inst = r.get('institution_name', 'Desconocida')
-        del_date = r.get('delivery_date') or '—'
-        if inst not in grouped: grouped[inst] = {}
         for it in r['items']:
-            prod = it.get('product_name', 'Prenda')
-            size_raw = it.get('exact_size') or it.get('size_range') or 'Única'
-            key = (prod, del_date)
-            if key not in grouped[inst]: grouped[inst][key] = defaultdict(int)
-            grouped[inst][key][size_raw] += int(it.get('quantity', 0))
+            for p_name, s_name, qty in _get_pending_pieces(it):
+                grouped[inst][(p_name, s_name)] += qty
+
+    # Extraer la fecha de entrega del primer pedido pendiente
+    global_delivery = ""
+    for r in data:
+        if date_str and not _in_colombia_day(r.get('created_at'), date_str): continue
+        if r.get('status') != 'Entregado' and r.get('delivery_date'):
+            global_delivery = r['delivery_date']
+            break
+    if not global_delivery: global_delivery = "N/A"
 
     filename = os.path.join(BASE_DIR, f"planilla_produccion_{datetime.now().strftime('%Y%m%d')}.pdf")
     doc = SimpleDocTemplate(filename, pagesize=letter, leftMargin=0.6*inch, rightMargin=0.6*inch, topMargin=0.5*inch, bottomMargin=0.5*inch)
     story = []
-    _build_header(story, "Planilla de Producción Taller", f"Corte al: {datetime.now().strftime('%d/%m/%Y')}")
-
-    if not grouped:
-        story.append(Paragraph("No hay prendas pendientes para producir.", ParagraphStyle('ND', textColor=GRAY_DARK, alignment=TA_CENTER)))
-    else:
-        for inst, prods in sorted(grouped.items()):
-            _school_header(story, inst)
-            t_data = [["Producto", "Talla", "Cant.", "Entrega Est."]]
-            for (p_name, del_date), sizes in sorted(prods.items(), key=lambda x: (x[0][0], x[0][1])):
-                for s_name, qty in sorted(sizes.items()):
-                    t_data.append([p_name, s_name, str(qty), del_date])
-            t = _section_table(t_data, [2.5*inch, 1.5*inch, 1*inch, 1.5*inch])
-            story.append(KeepTogether(t))
-            story.append(Spacer(1, 0.2*inch))
-            
-    _footer(story)
-    doc.build(story)
-    return filename
-
-def generate_orden_consolidada(db):
-    data = _fetch_all_data(db)
+    _build_header(story, "Planilla de Producción Taller", delivery_date=global_delivery)
     
-    # global aggregation
-    grouped = defaultdict(int) # {(inst, prod, size, delivery_date): qty}
-    for r in data:
-        if r.get('status') == 'Entregado': continue
-        inst = r.get('institution_name', 'Desconocida')
-        del_date = r.get('delivery_date') or '—'
-        for it in r['items']:
-            prod = it.get('product_name', 'Prenda')
-            size_raw = it.get('exact_size') or it.get('size_range') or 'Única'
-            grouped[(inst, prod, size_raw, del_date)] += int(it.get('quantity', 0))
-
-    filename = os.path.join(BASE_DIR, f"orden_consolidada_{datetime.now().strftime('%Y%m%d')}.pdf")
-    doc = SimpleDocTemplate(filename, pagesize=letter, leftMargin=0.6*inch, rightMargin=0.6*inch, topMargin=0.5*inch, bottomMargin=0.5*inch)
-    story = []
-    _build_header(story, "Orden Consolidada de Producción Global", f"Corte al: {datetime.now().strftime('%d/%m/%Y')}")
+    # Titulo de Fecha Global destacado
+    title_style = ParagraphStyle('TitleDate', fontName='Helvetica-Bold', fontSize=12, textColor=VINO, alignment=TA_CENTER)
+    story.append(Paragraph(f"Fecha de Entrega Estimada: {global_delivery}", title_style))
+    story.append(Spacer(1, 0.2*inch))
 
     if not grouped:
-        story.append(Paragraph("No hay prendas pendientes en el sistema global.", ParagraphStyle('ND', textColor=GRAY_DARK, alignment=TA_CENTER)))
+        story.append(Paragraph("No hay prendas pendientes para producir en todo el sistema.", ParagraphStyle('ND', textColor=GRAY_DARK, alignment=TA_CENTER)))
     else:
-        t_data = [["Colegio", "Producto", "Talla", "Cant.", "Entrega Est."]]
-        for (inst, p_name, s_name, del_date), qty in sorted(grouped.items(), key=lambda x: (x[0][0], x[0][1], x[0][3], x[0][2])):
-            t_data.append([inst, p_name, s_name, str(qty), del_date])
+        for inst, pend_items in sorted(grouped.items()):
+            _school_header(story, inst)
+            t_data = [["Producto a Fabricar", "Talla", "Cantidad"]]
+            for (p_name, s_name), qty in sorted(pend_items.items(), key=lambda x: (x[0][0], x[0][1])):
+                t_data.append([p_name, s_name, str(qty)])
+                
+            t = _section_table(t_data, [4.0*inch, 2.0*inch, 1.5*inch])
+            story.append(KeepTogether(t))
+            story.append(Spacer(1, 0.1*inch))
             
-        t = _section_table(t_data, [1.8*inch, 1.8*inch, 1.0*inch, 0.8*inch, 1.2*inch])
-        story.append(t)
-        
     _footer(story)
     doc.build(story)
     return filename
@@ -394,8 +452,8 @@ def generate_logistics_report(db):
         inst = r.get('institution_name', 'Desconocida')
         del_date = r.get('delivery_date') or '—'
         for it in r['items']:
-            prod = it.get('product_name', 'Prenda')
-            grouped[(inst, prod, del_date)] += int(it.get('quantity', 0))
+            for p_name, s_name, qty in _get_pending_pieces(it):
+                grouped[(inst, p_name, del_date)] += qty
 
     filename = os.path.join(BASE_DIR, f"logistics_{datetime.now().strftime('%Y-%m-%d')}.pdf")
     doc = SimpleDocTemplate(filename, pagesize=letter, leftMargin=0.6*inch, rightMargin=0.6*inch, topMargin=0.5*inch, bottomMargin=0.5*inch)
@@ -423,44 +481,74 @@ def generate_logistics_report(db):
     doc.build(story)
     return filename
 
-def generate_hoja_ruta(db):
+def generate_hoja_ruta(db, date_str=None):
     data = _fetch_all_data(db)
     
-    # Same as delivery consolidation but focused on the next working day deliveries
-    date_str = datetime.now().strftime("%d/%m/%Y") # Example logic, could adapt date
-    
     grouped = defaultdict(list)
+    
     for r in data:
         if r.get('status') == 'Entregado': continue
-        grouped[r.get('institution_name', 'Desconocida')].append(r)
+        if date_str and not _in_colombia_day(r.get('created_at'), date_str): continue
+        
+        items_detail = []
+        for it in r['items']:
+            prod_name = it.get('product_name', 'Prenda')
+            qty = int(it.get('quantity', 1))
+            size = it.get('exact_size') or it.get('size_range') or 'Única'
+            piezas = it.get('piezas', [])
+            
+            if piezas:
+                def p_str(p):
+                    return f"{p['nombre']} [{p['tallaPersonalizada']}]" if p.get('tallaPersonalizada', '').strip() else p['nombre']
+                
+                entregadas = [p_str(p) for p in piezas if p.get('estado') == 'Entregado']
+                pendientes = [p_str(p) for p in piezas if p.get('estado') == 'Pendiente']
+                
+                if not pendientes: continue # Todas entregadas, saltar este item
+                
+                desc_parts = []
+                if entregadas: desc_parts.append(f"Se entregó {', '.join(entregadas).upper()}")
+                if pendientes: desc_parts.append(f"NO se entregó {', '.join(pendientes).upper()}")
+                
+                desc = " / ".join(desc_parts)
+                items_detail.append(Paragraph(f"<b>{qty}x {prod_name}</b> (Talla {size})<br/><i><font color='#555555'>{desc}</font></i>", ParagraphStyle('Normal')))
+            else:
+                if it.get('status') == 'Entregado': continue
+                items_detail.append(Paragraph(f"<b>{qty}x {prod_name}</b> (Talla {size})<br/><i><font color='#555555'>NO se entregó {prod_name.upper()}</font></i>", ParagraphStyle('Normal')))
+
+        if items_detail:
+            grouped[r.get('institution_name', 'Desconocida')].append({
+                'receipt_number': r['receipt_number'],
+                'detail': items_detail
+            })
+
+    global_delivery = ""
+    for r in data:
+        if date_str and not _in_colombia_day(r.get('created_at'), date_str): continue
+        if r.get('status') != 'Entregado' and r.get('delivery_date'):
+            global_delivery = r['delivery_date']
+            break
+    if not global_delivery: global_delivery = "N/A"
 
     filename = os.path.join(BASE_DIR, f"hoja_ruta_{datetime.now().strftime('%Y-%m-%d')}.pdf")
     doc = SimpleDocTemplate(filename, pagesize=letter, leftMargin=0.6*inch, rightMargin=0.6*inch, topMargin=0.5*inch, bottomMargin=0.5*inch)
     story = []
-    _build_header(story, "Hoja de Ruta — Entregas Programadas", delivery_date="Próximas Entregas")
+    _build_header(story, "Hoja de Ruta", delivery_date=global_delivery)
 
     if not grouped:
-        story.append(Paragraph("No hay entregas pendientes.", ParagraphStyle('ND', textColor=GRAY_DARK, alignment=TA_CENTER)))
+        story.append(Paragraph("No hay entregas pendientes para fabricar.", ParagraphStyle('ND', textColor=GRAY_DARK, alignment=TA_CENTER)))
     else:
         for inst, recs in sorted(grouped.items()):
             _school_header(story, inst)
-            t_data = [["Recibo", "Cliente", "Teléfono", "Fecha de Ent.", "Saldo"]]
-            recs.sort(key=lambda x: str(x.get('delivery_date','')))
-            total = 0.0
-            for r in recs:
-                bal = float(r.get('balance', 0))
-                t_data.append([r['receipt_number'], r.get('client_name') or '—', r.get('client_phone') or '—', r.get('delivery_date') or '—', _fmt(bal)])
-                total += bal
+            t_data = [["N° Recibo", "Detalle de Entregas"]]
             
-            t_data.append(["", "", "", "SUBTOTAL:", _fmt(total)])
-            t = _section_table(t_data, [0.8*inch, 2*inch, 1.2*inch, 1.3*inch, 1.2*inch])
-            t.setStyle(TableStyle([
-                ('SPAN',       (0, -1), (3, -1)),
-                ('BACKGROUND', (0, -1), (-1, -1), LIGHT_GRAY),
-                ('FONTNAME',   (0, -1), (-1, -1), 'Helvetica-Bold'),
-                ('ALIGN',      (-1, -1), (-1, -1), 'RIGHT'),
-            ]))
-            story.append(KeepTogether(t))
+            recs.sort(key=lambda x: str(x['receipt_number']))
+            
+            for r in recs:
+                t_data.append([r['receipt_number'], r['detail']])
+            
+            t = _section_table(t_data, [1.5*inch, 6.0*inch])
+            story.append(t)
             story.append(Spacer(1, 0.2*inch))
             
     _footer(story)

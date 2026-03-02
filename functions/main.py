@@ -17,7 +17,8 @@ import firestore_reports
 @https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["GET", "POST"]))
 def report_sales(req: https_fn.Request) -> https_fn.Response:
     date_str = req.args.get("date")
-    filepath = firestore_reports.generate_sales_report(get_db(), date_str)
+    period = req.args.get("period")
+    filepath = firestore_reports.generate_sales_report(get_db(), date_str, period)
     return _serve_pdf(filepath)
 
 @https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["GET", "POST"]))
@@ -33,18 +34,17 @@ def report_delivery(req: https_fn.Request) -> https_fn.Response:
 
 @https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["GET", "POST"]))
 def report_hoja_ruta(req: https_fn.Request) -> https_fn.Response:
-    filepath = firestore_reports.generate_hoja_ruta(get_db())
+    date_str = req.args.get("date")
+    filepath = firestore_reports.generate_hoja_ruta(get_db(), date_str)
     return _serve_pdf(filepath)
 
 @https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["GET", "POST"]))
 def report_planilla_produccion(req: https_fn.Request) -> https_fn.Response:
-    filepath = firestore_reports.generate_planilla_produccion(get_db())
+    date_str = req.args.get("date")
+    filepath = firestore_reports.generate_planilla_produccion(get_db(), date_str)
     return _serve_pdf(filepath)
 
-@https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["GET", "POST"]))
-def report_orden_consolidada(req: https_fn.Request) -> https_fn.Response:
-    filepath = firestore_reports.generate_orden_consolidada(get_db())
-    return _serve_pdf(filepath)
+
 
 def _serve_pdf(filepath: str) -> https_fn.Response:
     try:

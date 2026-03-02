@@ -2,17 +2,27 @@
 
 import { db, auth } from './firebase_config.js';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { collection, doc, query, orderBy, onSnapshot, getDocs, updateDoc, addDoc, writeBatch, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, doc, query, orderBy, limit, onSnapshot, getDocs, updateDoc, addDoc, writeBatch, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const API = '/api'; // Using Firebase Hosting rewrites to Cloud Functions
 
 let allReceipts = [];
 let _currentAbonoId = null;
 let unsubscribeSnapshot = null;
+let _currentLimit = 150;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
 const fmt = n => '$ ' + Math.round(n || 0).toLocaleString('es-CO');
-const esc = s => (s || '').replace(/'/g, "\\'");
+const escapeHTML = str => {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+const esc = s => (s || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
 // ── AUTH GATE ─────────────────────────────────────────────────────────────
 function showLoginGate() {
@@ -239,10 +249,10 @@ function setupFirestoreListener() {
 
   document.getElementById('receipts-tbody').innerHTML =
     `<tr><td colspan="11" style="text-align:center;color:#6C757D;padding:30px">
-             ⏳ Sincronizando con la nube...
+             ⏳ Sincronizando con la nube (Últimos ${_currentLimit})...
              </td></tr>`;
 
-  const q = query(collection(db, 'receipts'), orderBy('created_at', 'desc'));
+  const q = query(collection(db, 'receipts'), orderBy('created_at', 'desc'), limit(_currentLimit));
 
   unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
     allReceipts = [];
@@ -334,7 +344,7 @@ function renderTable(receipts) {
             <p>No hay recibos con los filtros seleccionados</p></div></td></tr>`;
     return;
   }
-  tbody.innerHTML = receipts.map(r => {
+  let htmlRows = receipts.map(r => {
     const isAnul = r.is_anulado;
     const payStat = r.payment_status || 'Pendiente';
     const totalPaid = r.total_paid || 0;
@@ -375,8 +385,8 @@ function renderTable(receipts) {
           <tr class="${isAnul ? 'anulado' : ''} ${payStat === 'Cancelado' ? 'row-cancelado' : payStat === 'Abonado' ? 'row-abonado' : ''}">
             <td><strong>${r.number}</strong></td>
             <td>${r.institution || '—'}</td>
-            <td>${r.client || '(Sin nombre)'}</td>
-            <td>${r.phone || '—'}</td>
+            <td>${escapeHTML(r.client) || '(Sin nombre)'}</td>
+            <td>${escapeHTML(r.phone) || '—'}</td>
             <td style="font-weight:700">${totalHtml}</td>
             <td>${isAnul ? '—' : fmt(totalPaid)}</td>
             <td style="font-weight:700;color:${balance > 0 ? '#D93025' : '#1E8E3E'}">${isAnul ? '—' : fmt(balance)}</td>
@@ -387,6 +397,16 @@ function renderTable(receipts) {
             <td><div class="action-btns">${actions}</div></td>
           </tr>`;
   }).join('');
+
+  if (allReceipts.length >= _currentLimit) {
+    htmlRows += `<tr><td colspan="11" style="text-align:center; padding:15px; background:white; position:relative; z-index:0;">
+          <button onclick="window.loadMoreReceipts()" style="background:var(--vino); color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;">
+              <i class="fas fa-sync-alt"></i> Cargar 150 recibos más
+          </button>
+      </td></tr>`;
+  }
+
+  document.getElementById('receipts-tbody').innerHTML = htmlRows;
 }
 
 // ── INSTITUTION FILTER ─────────────────────────────────────────────────────
@@ -491,7 +511,7 @@ function renderEditItems() {
         }
 
         const pieceLineThru = pz.estado === 'Anulado' ? 'text-decoration: line-through; opacity: 0.6;' : '';
-        const customSizeText = pz.tallaPersonalizada ? ` <span style="color:var(--gray-600); font-weight:normal; font-size:11.5px;">[${pz.tallaPersonalizada}]</span>` : '';
+        const customSizeText = pz.tallaPersonalizada ? ` <span style="color:var(--gray-600); font-weight:normal; font-size:11.5px;">[${escapeHTML(pz.tallaPersonalizada)}]</span>` : '';
 
         piezasHtml += `
                     <div style="display: flex; flex-direction: column; padding: 10px 8px; border-top: 1px solid var(--gray-200);">
@@ -900,7 +920,7 @@ async function openDetailModal(id) {
     const rows = (items || []).map((it, i) => {
       let pieceInfo = '';
       if (it.piezas && it.piezas.length > 0) {
-        const pNameStr = p => p.nombre + (p.tallaPersonalizada ? ` [${p.tallaPersonalizada}]` : '');
+        const pNameStr = p => p.nombre + (p.tallaPersonalizada ? ` [${escapeHTML(p.tallaPersonalizada)}]` : '');
         const ent = it.piezas.filter(p => p.estado === 'Entregado').map(pNameStr).join(', ').toUpperCase();
         const pen = it.piezas.filter(p => p.estado === 'Pendiente').map(pNameStr).join(', ').toUpperCase();
         const apa = it.piezas.filter(p => p.estado === 'Apartado').map(pNameStr).join(', ').toUpperCase();
@@ -934,7 +954,7 @@ async function openDetailModal(id) {
               <td style="padding:6px 10px;font-size:11px">${String(pay.created_at || '').slice(0, 16).replace('T', ' ')}</td>
               <td style="padding:6px 10px">${pay.payment_method === 'Efectivo' ? '💵' : '📲'} ${pay.payment_method}</td>
               <td style="padding:6px 10px;text-align:right;font-weight:700;color:#1E8E3E">${fmt(pay.amount)}</td>
-              <td style="padding:6px 10px;font-size:11px;color:var(--gray-600)">${pay.notes || '—'}</td>
+              <td style="padding:6px 10px;font-size:11px;color:var(--gray-600)">${escapeHTML(pay.notes) || '—'}</td>
             </tr>`).join('') || `<tr><td colspan="4" style="padding:12px;text-align:center;color:var(--gray-600)">Sin abonos registrados</td></tr>`;
 
     body.innerHTML = `

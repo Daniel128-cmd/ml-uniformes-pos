@@ -19,9 +19,19 @@ import {
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 /**
- * Calcula la fecha de entrega estimada: hoy + 15 días hábiles (lun–vie).
+ * Calculates delivery date: today + 15 business days.
  * @returns {string} DD/MM/YYYY
  */
+const escapeHTML = str => {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+};
+
 function calcularFechaEntrega15DiasHabiles() {
     let current = new Date();
     let added = 0;
@@ -853,7 +863,7 @@ async function guardarPedidoConfirmado() {
                 item.piezas.forEach(pz => {
                     const icon = pz.estado === 'Entregado' ? '✅' : (pz.estado === 'Apartado' ? '📦' : '⏳');
                     const weight = pz.estado === 'Pendiente' ? 'font-weight:600; color:#d93025;' : (pz.estado === 'Apartado' ? 'font-weight:600; color:#E65100;' : '');
-                    piezasListHTML += `<div style="${weight}">${icon} ${pz.nombre} - ${pz.estado}</div>`;
+                    piezasListHTML += `<div style="${weight}">${icon} ${escapeHTML(pz.nombre)} - ${escapeHTML(pz.estado)}</div>`;
                 });
                 piezasListHTML += '</div>';
             }

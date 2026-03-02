@@ -44,10 +44,6 @@
                 "function": "report_planilla_produccion"
             },
             {
-                "source": "/api/admin/reports/orden-consolidada",
-                "function": "report_orden_consolidada"
-            },
-            {
                 "source": "**",
                 "destination": "/index.html"
             }

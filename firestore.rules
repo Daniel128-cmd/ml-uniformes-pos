@@ -23,7 +23,7 @@ service cloud.firestore {
 
     // ── COLECCIÓN DE PEDIDOS (RECEIPTS) ──────────────────────────────────────
     match /receipts/{receiptId} {
-      allow read: if true;
+      allow read: if isAdmin();
       allow create: if true;
       
       // Solo el Admin puede modificar y anular/borrar
@@ -31,14 +31,14 @@ service cloud.firestore {
       
       // ── SUBCOLECCIÓN DE ITEMS (PRENDAS)
       match /items/{itemId} {
-        allow read: if true;
+        allow read: if isAdmin();
         allow create: if true;
         allow update, delete: if isAdmin();
       }
 
       // ── SUBCOLECCIÓN DE ABONOS (PAYMENTS)
       match /payments/{paymentId} {
-        allow read: if true;
+        allow read: if isAdmin();
         allow create: if true;
         allow update, delete: if false; 
       }
