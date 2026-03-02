@@ -8,11 +8,7 @@ from socketserver import ThreadingMixIn
 import urllib.parse
 import pdf_generator
 
-
-# Cuando corre en Render, la base de datos va en el disco persistente /data
-# En local, usa el mismo directorio del script
-_DATA_DIR = "/data" if os.path.isdir("/data") else os.path.dirname(os.path.abspath(__file__))
-DATABASE = os.path.join(_DATA_DIR, "ml_pedidos.db")
+DATABASE = "ml_pedidos.db"
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -637,13 +633,11 @@ def migrate_db():
     conn.close()
 
 
-def run_server(port=None):
-    if port is None:
-        port = int(os.environ.get("PORT", 8000))
+def run_server(port=8000):
     migrate_db()   # ensure schema is up-to-date
     server_address = ('', port)
     httpd = ThreadedHTTPServer(server_address, MLPedidosRequestHandler)
-    print(f"Servidor ML Pedidos ejecutandose en puerto {port}")
+    print(f"Servidor ML Pedidos ejecutandose en http://localhost:{port}")
     print("Presiona Ctrl+C para detener.")
     try:
         httpd.serve_forever()
@@ -651,4 +645,6 @@ def run_server(port=None):
         print("\nServidor detenido.")
 
 if __name__ == "__main__":
+    from models import init_db
+    init_db()
     run_server()

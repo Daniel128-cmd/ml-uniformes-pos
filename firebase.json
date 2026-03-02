@@ -1,59 +1,112 @@
 {
+    "functions": [
+        {
+            "source": "functions",
+            "codebase": "default",
+            "ignore": [
+                "venv",
+                ".git",
+                "firebase-debug.log",
+                "firebase-debug.*.log",
+                "*.local"
+            ]
+        }
+    ],
+    "firestore": {
+        "rules": "firestore.rules"
+    },
     "hosting": {
-        "public": ".",
+        "public": "public",
         "ignore": [
             "firebase.json",
-            ".firebaserc",
-            "firestore.rules",
-            "GUIA_ACTUALIZACION.md",
-            "backend/**",
-            "**/.git/**",
-            "**/node_modules/**",
-            "**/*.py",
-            "**/*.db",
-            "**/*.pdf"
-        ],
-        "headers": [
-            {
-                "source": "**/*.js",
-                "headers": [
-                    {
-                        "key": "Cache-Control",
-                        "value": "public, max-age=86400"
-                    }
-                ]
-            },
-            {
-                "source": "**/*.css",
-                "headers": [
-                    {
-                        "key": "Cache-Control",
-                        "value": "public, max-age=86400"
-                    }
-                ]
-            },
-            {
-                "source": "**/*.html",
-                "headers": [
-                    {
-                        "key": "Cache-Control",
-                        "value": "no-cache"
-                    }
-                ]
-            }
+            "**/.*",
+            "**/node_modules/**"
         ],
         "rewrites": [
             {
-                "source": "/admin",
-                "destination": "/admin.html"
+                "source": "/api/admin/reports/sales",
+                "function": "report_sales"
             },
             {
-                "source": "/pos",
+                "source": "/api/admin/reports/logistics",
+                "function": "report_logistics"
+            },
+            {
+                "source": "/api/admin/reports/delivery-consolidation",
+                "function": "report_delivery"
+            },
+            {
+                "source": "/api/admin/reports/hoja-ruta",
+                "function": "report_hoja_ruta"
+            },
+            {
+                "source": "/api/admin/reports/planilla-produccion",
+                "function": "report_planilla_produccion"
+            },
+            {
+                "source": "/api/admin/reports/orden-consolidada",
+                "function": "report_orden_consolidada"
+            },
+            {
+                "source": "**",
                 "destination": "/index.html"
             }
+        ],
+        "headers": [
+            {
+                "source": "**/*.@(eot|otf|ttf|ttc|woff|font.css)",
+                "headers": [
+                    {
+                        "key": "Access-Control-Allow-Origin",
+                        "value": "*"
+                    }
+                ]
+            },
+            {
+                "source": "**/*.@(jpg|jpeg|gif|png)",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "max-age=7200"
+                    }
+                ]
+            },
+            {
+                "source": "404.html",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "max-age=300"
+                    }
+                ]
+            },
+            {
+                "source": "**/*.@(js|css)",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "max-age=7200"
+                    }
+                ]
+            },
+            {
+                "source": "/index.html",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "no-cache, no-store, must-revalidate"
+                    }
+                ]
+            },
+            {
+                "source": "/admin.html",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "no-cache, no-store, must-revalidate"
+                    }
+                ]
+            }
         ]
-    },
-    "firestore": {
-        "rules": "firestore.rules"
     }
 }

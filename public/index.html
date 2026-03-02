@@ -7,16 +7,12 @@
     <title>ML Pedidos — POS Uniformes</title>
     <meta name="description"
         content="Sistema de punto de venta para ML Uniformes. Gestión de pedidos de uniformes escolares y empresariales." />
-    <link rel="stylesheet" href="styles.css?v=16" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="styles.css?v=12" />
 </head>
 
 <body>
-    <!-- OfflineBanner -->
-    <div id="offline-banner">
-        <span class="offline-icon">📡</span>
-        Sin conexión con el servidor — Los cambios no se guardarán
-        <button class="offline-retry" onclick="window.location.reload()">🔄 Reintentar</button>
-    </div>
 
     <!-- ═══════════════════════════════════════════════════════
        BARRA SUPERIOR
@@ -181,6 +177,18 @@
                 <div class="size-pills" id="exact-size-pills" role="group" aria-label="Talla específica"></div>
             </div>
 
+            <!-- Tallas personalizadas por prenda (oculta inicialmente) -->
+            <div id="piece-custom-sizes-section"
+                style="display:none; margin-bottom: 18px; padding-top: 10px; border-top: 1px dashed var(--gray-300);">
+                <div class="modal-section-label" style="display:flex; justify-content:space-between;">
+                    Especif. Talla Adicional / Largo <span
+                        style="font-weight:normal; color:#6C757D; font-size:11px;">(Opcional)</span>
+                </div>
+                <!-- Inputs generados dinámicamente -->
+                <div id="piece-custom-sizes-container"
+                    style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>
+            </div>
+
             <!-- Precio dinámico según talla -->
             <div class="size-price-display" id="size-price-display">
                 Selecciona un rango para ver el precio
@@ -276,9 +284,17 @@
             </div>
 
             <!-- Botones de acción -->
-            <div class="receipt-actions">
-                <button class="btn-print" id="btn-print" aria-label="Imprimir recibo">🖨 Imprimir</button>
-                <button class="btn-close-receipt" id="btn-close-receipt" aria-label="Cerrar recibo">Cerrar</button>
+            <div class="receipt-actions" style="display:flex; flex-direction:column; gap:8px;">
+                <button class="btn-print" id="btn-whatsapp" aria-label="Enviar por WhatsApp"
+                    style="background-color:#25D366; color:white; border:none;">
+                    <i class="fab fa-whatsapp"></i> Enviar por WhatsApp
+                </button>
+                <div style="display:flex; gap:8px; width:100%;">
+                    <button class="btn-print" id="btn-print" aria-label="Imprimir recibo" style="flex:1; margin:0;">🖨
+                        Imprimir</button>
+                    <button class="btn-close-receipt" id="btn-close-receipt" aria-label="Cerrar recibo"
+                        style="flex:1; margin:0;">Cerrar</button>
+                </div>
             </div>
 
         </div>
@@ -374,12 +390,9 @@
         </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════
-       SCRIPTS
-  ══════════════════════════════════════════════════════════ -->
-    <script src="config.js"></script>
-    <script src="data.js?v=16"></script>
-    <script src="app.js?v=16"></script>
+    <script type="module" src="firebase_config.js"></script>
+    <script src="data.js?v=36"></script>
+    <script type="module" src="app.js?v=36"></script>
 
 </body>
 

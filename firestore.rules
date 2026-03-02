@@ -1,66 +1,80 @@
 rules_version = '2';
 
-// ──────────────────────────────────────────────────────────────
-//  Firestore Security Rules — ML Uniformes POS
-//  Política: Solo el Admin autenticado puede escribir o borrar.
-//  Nadie puede leer sin autenticación (los datos son privados).
-// ──────────────────────────────────────────────────────────────
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ── Función auxiliar: ¿es el admin autenticado?
+    
+    // Función central para verificar si el usuario es Admin
+    // Revisa si el email del usuario logueado existe en la lista blanca
     function isAdmin() {
-      return request.auth != null
-        && request.auth.token.email == 'dm6636267@gmail.com';
+      return request.auth != null && (
+        request.auth.token.role == 'ADMIN' || 
+        exists(/databases/$(database)/documents/allowed_admins/$(request.auth.token.email))
+      );
     }
 
-    // ── Recibos / pedidos
+    // Función para verificar si el usuario es trabajador (Vendedor)
+    function isWorker() {
+      return request.auth != null && request.auth.token.role == 'WORKER';
+    }
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ── COLECCIÓN DE PEDIDOS (RECEIPTS) ──────────────────────────────────────
     match /receipts/{receiptId} {
-      allow read:   if isAdmin();
-      allow create: if isAdmin();
-      // update usa merge=true para no sobrescribir campos no definidos
-      allow update: if isAdmin()
-        && request.resource.data.keys().hasAny(resource.data.keys());
-      allow delete: if isAdmin();
-
-      // Historial de versiones (sub-colección para auditoría)
-      match /versions/{versionId} {
-        allow read:  if isAdmin();
-        allow write: if isAdmin();
-      }
-
-      // Abonos / payments
-      match /payments/{paymentId} {
-        allow read:  if isAdmin();
-        allow write: if isAdmin();
-      }
-
-      // Items del pedido
+      allow read: if true;
+      allow create: if true;
+      
+      // Solo el Admin puede modificar y anular/borrar
+      allow update, delete: if isAdmin();
+      
+      // ── SUBCOLECCIÓN DE ITEMS (PRENDAS)
       match /items/{itemId} {
-        allow read:  if isAdmin();
-        allow write: if isAdmin();
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if isAdmin();
+      }
+
+      // ── SUBCOLECCIÓN DE ABONOS (PAYMENTS)
+      match /payments/{paymentId} {
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if false; 
       }
     }
 
-    // ── Instituciones / colegios
-    match /institutions/{instId} {
-      allow read:   if isAdmin();
-      allow write:  if isAdmin();
+    // ── COLECCIONES BASE (INSTITUCIONES, PRODUCTOS Y COUNTERS) ──────────────
+    match /institutions/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // ── Productos / prendas
-    match /products/{productId} {
-      allow read:   if isAdmin();
-      allow write:  if isAdmin();
+    match /products/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // ── LISTA BLANCA DE ADMINS (Google Login) ──────────────────────────────
+    // Documentos con ID = email del gmail autorizado, acceso de lectura público
+    // para que el check funcione antes del login completo
+    match /allowed_admins/{email} {
+      allow read: if true;
+      allow write: if false; // Solo se administra desde la consola de Firebase
     }
 
-    // ── Usuarios del sistema
+    match /counters/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // ── USUARIOS ───────────────────────────────────────────────────────────
     match /users/{userId} {
+      // Permitir que un usuario lea su propio documento (opcional para checkear rol cliente)
+      allow read: if request.auth != null && request.auth.uid == userId;
       allow read, write: if isAdmin();
     }
 
-    // ── Bloquear todo lo demás
+    // Bloquear todo lo demás por defecto
     match /{document=**} {
       allow read, write: if false;
     }

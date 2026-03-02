@@ -18,30 +18,52 @@ const INSTITUCIONES = [
     productos: [
       // ── KIT DE UNIFORMES ────────────────────────────────────────────
       {
-        id: 'abedul_kit_2_6',
-        nombre: 'Kit Completo',
+        id: 'abedul_kit_masc',
+        nombre: 'Kit Completo Masculino',
         categoria: 'kit',
-        genero: 'mixto',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario', 'Sueter Deportivo', 'Sudadera Deportiva', 'Camisa Gala Masculina', 'Pantalón Gala'],
         tallas: {
           'Talla 2-6': 297000,
-          'Talla 8-12 Masc': 315000,
-          'Talla 8-12 Feme': 320000,
-          'Talla 14-16 Masc': 330000,
-          'Talla 14-16 Feme': 334000,
+          'Talla 8-12': 315000,
+          'Talla 14-16': 330000,
+        }
+      },
+      {
+        id: 'abedul_kit_feme',
+        nombre: 'Kit Completo Femenino',
+        categoria: 'kit',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Jardinera Diario', 'Sueter Deportivo', 'Sudadera Deportiva', 'Camisa Gala Femenina', 'Falda Gala'],
+        tallas: {
+          'Talla 2-6': 297000,
+          'Talla 8-12': 320000,
+          'Talla 14-16': 334000,
         }
       },
       // ── UNIFORME DIARIO ─────────────────────────────────────────────
       {
-        id: 'abedul_diario_kit',
-        nombre: 'Kit Diario',
+        id: 'abedul_diario_masc',
+        nombre: 'Kit Diario Masculino',
         categoria: 'diario',
-        genero: 'mixto',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario'],
         tallas: {
           'Talla 2-6': 118000,
-          'Talla 8-12 Masc': 123000,
-          'Talla 8-12 Feme': 128000,
-          'Talla 14-16 Masc': 128000,
-          'Talla 14-16 Feme': 132000,
+          'Talla 8-12': 123000,
+          'Talla 14-16': 128000,
+        }
+      },
+      {
+        id: 'abedul_diario_feme',
+        nombre: 'Kit Diario Femenino',
+        categoria: 'diario',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Jardinera Diario'],
+        tallas: {
+          'Talla 2-6': 118000,
+          'Talla 8-12': 128000,
+          'Talla 14-16': 132000,
         }
       },
       {
@@ -59,7 +81,7 @@ const INSTITUCIONES = [
         id: 'abedul_pantalon_diario',
         nombre: 'Pantalón Diario',
         categoria: 'diario',
-        genero: 'mixto',
+        genero: 'masc',
         tallas: {
           'Talla 2-6': 56000,
           'Talla 8-12': 59000,
@@ -68,7 +90,7 @@ const INSTITUCIONES = [
       },
       {
         id: 'abedul_jardinera_diario',
-        nombre: 'Jardinera / Falda Diario',
+        nombre: 'Jardinera Diario',
         categoria: 'diario',
         genero: 'feme',
         tallas: {
@@ -83,6 +105,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Deportivo (2 pzas)',
         categoria: 'deportivo',
         genero: 'mixto',
+        piezas: ['Sueter Deportivo', 'Sudadera Deportiva'],
         tallas: {
           'Talla 2-6': 118000,
           'Talla 8-12': 128000,
@@ -111,12 +134,23 @@ const INSTITUCIONES = [
           'Talla 14-16': 68000,
         }
       },
-      // ── CAMISA DE GALA ──────────────────────────────────────────────
+      // ── GALA ──────────────────────────────────────────────
       {
-        id: 'abedul_camisa_gala',
-        nombre: 'Camisa de Gala',
+        id: 'abedul_camisa_gala_masc',
+        nombre: 'Camisa Gala Masculina',
         categoria: 'gala',
-        genero: 'mixto',
+        genero: 'masc',
+        tallas: {
+          'Talla 2-6': 61000,
+          'Talla 8-12': 64000,
+          'Talla 14-16': 66000,
+        }
+      },
+      {
+        id: 'abedul_camisa_gala_feme',
+        nombre: 'Camisa Gala Femenina',
+        categoria: 'gala',
+        genero: 'feme',
         tallas: {
           'Talla 2-6': 61000,
           'Talla 8-12': 64000,
@@ -134,10 +168,23 @@ const INSTITUCIONES = [
     productos: [
       // ── KIT ─────────────────────────────────────────────────────────
       {
-        id: 'dc_kit',
-        nombre: 'Kit Completo',
+        id: 'dc_kit_masc',
+        nombre: 'Kit Completo Masculino',
         categoria: 'kit',
-        genero: 'mixto',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario', 'Sueter Deportivo', 'Sudadera Deportiva', 'Camisa Gala Masculina', 'Pantalón Gala'],
+        tallas: {
+          'Talla 2-6': 273000,
+          'Talla 8-12': 285000,
+          'Talla 14-16': 299000,
+        }
+      },
+      {
+        id: 'dc_kit_feme',
+        nombre: 'Kit Completo Femenino',
+        categoria: 'kit',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Falda Diario', 'Sueter Deportivo', 'Sudadera Deportiva', 'Camisa Gala Femenina', 'Falda Gala'],
         tallas: {
           'Talla 2-6': 273000,
           'Talla 8-12': 285000,
@@ -146,10 +193,23 @@ const INSTITUCIONES = [
       },
       // ── DIARIO ──────────────────────────────────────────────────────
       {
-        id: 'dc_kit_diario',
-        nombre: 'Kit Diario',
+        id: 'dc_kit_diario_masc',
+        nombre: 'Kit Diario Masculino',
         categoria: 'diario',
-        genero: 'mixto',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario'],
+        tallas: {
+          'Talla 2-6': 113000,
+          'Talla 8-12': 117000,
+          'Talla 14-16': 123000,
+        }
+      },
+      {
+        id: 'dc_kit_diario_feme',
+        nombre: 'Kit Diario Femenino',
+        categoria: 'diario',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Falda Diario'],
         tallas: {
           'Talla 2-6': 113000,
           'Talla 8-12': 117000,
@@ -184,6 +244,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Deportivo (2 pzas)',
         categoria: 'deportivo',
         genero: 'mixto',
+        piezas: ['Sueter Deportivo', 'Sudadera Deportiva'],
         tallas: {
           'Talla 2-6': 101000,
           'Talla 8-12': 107000,
@@ -214,10 +275,21 @@ const INSTITUCIONES = [
       },
       // ── GALA ────────────────────────────────────────────────────────
       {
-        id: 'dc_gala',
-        nombre: 'Camisa de Gala',
+        id: 'dc_gala_masc',
+        nombre: 'Camisa Gala Masculina',
         categoria: 'gala',
-        genero: 'mixto',
+        genero: 'masc',
+        tallas: {
+          'Talla 2-6': 59000,
+          'Talla 8-12': 61000,
+          'Talla 14-16': 64000,
+        }
+      },
+      {
+        id: 'dc_gala_feme',
+        nombre: 'Camisa Gala Femenina',
+        categoria: 'gala',
+        genero: 'feme',
         tallas: {
           'Talla 2-6': 59000,
           'Talla 8-12': 61000,
@@ -233,12 +305,50 @@ const INSTITUCIONES = [
     nombre: 'Colegio Gardner',
     color: '#7B1929',
     productos: [
+      // ── KIT COMPLETO (Sin Gala disponible) ─────────────────────────
+      {
+        id: 'gardner_kit_masc',
+        nombre: 'Kit Completo Masculino',
+        categoria: 'kit',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 295000,
+          'Talla 8-12': 316000,
+          'Talla 14-16': 337000,
+        }
+      },
+      {
+        id: 'gardner_kit_feme',
+        nombre: 'Kit Completo Femenino',
+        categoria: 'kit',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Falda Diario', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 295000,
+          'Talla 8-12': 316000,
+          'Talla 14-16': 337000,
+        }
+      },
       // ── DIARIO ──────────────────────────────────────────────────────
       {
-        id: 'gardner_kit_diario',
-        nombre: 'Kit Diario',
+        id: 'gardner_kit_diario_masc',
+        nombre: 'Kit Diario Masculino',
         categoria: 'diario',
-        genero: 'mixto',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario'],
+        tallas: {
+          'Talla 2-6': 186000,
+          'Talla 8-12': 198000,
+          'Talla 14-16': 212000,
+        }
+      },
+      {
+        id: 'gardner_kit_diario_feme',
+        nombre: 'Kit Diario Femenino',
+        categoria: 'diario',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Falda Diario'],
         tallas: {
           'Talla 2-6': 186000,
           'Talla 8-12': 198000,
@@ -257,10 +367,21 @@ const INSTITUCIONES = [
         }
       },
       {
-        id: 'gardner_pantalon_jardinera',
-        nombre: 'Pantalón / Jardinera Diario',
+        id: 'gardner_pantalon',
+        nombre: 'Pantalón Diario',
         categoria: 'diario',
-        genero: 'mixto',
+        genero: 'masc',
+        tallas: {
+          'Talla 2-6': 59000,
+          'Talla 8-12': 64000,
+          'Talla 14-16': 70000,
+        }
+      },
+      {
+        id: 'gardner_falda',
+        nombre: 'Falda Diario',
+        categoria: 'diario',
+        genero: 'feme',
         tallas: {
           'Talla 2-6': 59000,
           'Talla 8-12': 64000,
@@ -284,6 +405,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Deportivo (2 pzas)',
         categoria: 'deportivo',
         genero: 'mixto',
+        piezas: ['Sueter Deportivo', 'Sudadera Deportiva'],
         tallas: {
           'Talla 2-6': 109000,
           'Talla 8-12': 118000,
@@ -321,12 +443,38 @@ const INSTITUCIONES = [
     nombre: 'GIV',
     color: '#7B1929',
     productos: [
+      // ── KIT COMPLETO (Sin Gala disponible) ─────────────────────────
+      {
+        id: 'giv_kit_masc',
+        nombre: 'Kit Completo Masculino',
+        categoria: 'kit',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario', 'Sueter Deportivo', 'Sudadera Deportiva', 'Pantaloneta Deportiva'],
+        tallas: {
+          'Talla 2-6': 253000,
+          'Talla 8-12': 274000,
+          'Talla 14-16': 294000,
+        }
+      },
+      {
+        id: 'giv_kit_feme',
+        nombre: 'Kit Completo Femenino',
+        categoria: 'kit',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Falda Diario', 'Sueter Deportivo', 'Sudadera Deportiva', 'Pantaloneta Deportiva'],
+        tallas: {
+          'Talla 2-6': 262000,
+          'Talla 8-12': 280000,
+          'Talla 14-16': 296000,
+        }
+      },
       // ── DIARIO ──────────────────────────────────────────────────────
       {
         id: 'giv_kit_diario_masc',
         nombre: 'Kit Diario Masculino',
         categoria: 'diario',
         genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario'],
         tallas: {
           'Talla 2-6': 121000,
           'Talla 8-12': 132000,
@@ -338,6 +486,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Diario Femenino',
         categoria: 'diario',
         genero: 'feme',
+        piezas: ['Camisa Diario', 'Falda Diario'],
         tallas: {
           'Talla 2-6': 130000,
           'Talla 8-12': 138000,
@@ -383,6 +532,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Deportivo',
         categoria: 'deportivo',
         genero: 'mixto',
+        piezas: ['Sueter Deportivo', 'Sudadera Deportiva', 'Pantaloneta Deportiva'],
         tallas: {
           'Talla 2-6': 132000,
           'Talla 8-12': 142000,
@@ -431,12 +581,38 @@ const INSTITUCIONES = [
     nombre: 'Increart',
     color: '#7B1929',
     productos: [
+      // ── KIT COMPLETO (Sin Gala disponible) ─────────────────────────
+      {
+        id: 'increart_kit_masc',
+        nombre: 'Kit Completo Masculino',
+        categoria: 'kit',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 197000,
+          'Talla 8-12': 211000,
+          'Talla 14-16': 223000,
+        }
+      },
+      {
+        id: 'increart_kit_feme',
+        nombre: 'Kit Completo Femenino',
+        categoria: 'kit',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Jardinera Diario', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 203000,
+          'Talla 8-12': 217000,
+          'Talla 14-16': 230000,
+        }
+      },
       // ── DIARIO ──────────────────────────────────────────────────────
       {
         id: 'increart_kit_diario_masc',
         nombre: 'Kit Diario Masculino',
         categoria: 'diario',
         genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario'],
         tallas: {
           'Talla 2-6': 101000,
           'Talla 8-12': 109000,
@@ -448,6 +624,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Diario Femenino',
         categoria: 'diario',
         genero: 'feme',
+        piezas: ['Camisa Diario', 'Jardinera Diario'],
         tallas: {
           'Talla 2-6': 107000,
           'Talla 8-12': 115000,
@@ -478,7 +655,7 @@ const INSTITUCIONES = [
       },
       {
         id: 'increart_jardinera',
-        nombre: 'Jardinera / Falda Diario',
+        nombre: 'Jardinera Diario',
         categoria: 'diario',
         genero: 'feme',
         tallas: {
@@ -493,6 +670,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Deportivo (2 pzas)',
         categoria: 'deportivo',
         genero: 'mixto',
+        piezas: ['Sueter Deportivo', 'Sudadera Deportiva'],
         tallas: {
           'Talla 2-6': 96000,
           'Talla 8-12': 102000,
@@ -530,12 +708,38 @@ const INSTITUCIONES = [
     nombre: 'Juguemos a Aprender',
     color: '#7B1929',
     productos: [
+      // ── KIT COMPLETO (Sin Gala disponible) ─────────────────────────
+      {
+        id: 'jug_kit_masc',
+        nombre: 'Kit Completo Masculino',
+        categoria: 'kit',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 208000,
+          'Talla 8-12': 226000,
+          'Talla 14-16': 244000,
+        }
+      },
+      {
+        id: 'jug_kit_feme',
+        nombre: 'Kit Completo Femenino',
+        categoria: 'kit',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Falda Diario', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 217000,
+          'Talla 8-12': 232000,
+          'Talla 14-16': 246000,
+        }
+      },
       // ── DIARIO ──────────────────────────────────────────────────────
       {
         id: 'jug_kit_diario_masc',
         nombre: 'Kit Diario Masculino',
         categoria: 'diario',
         genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario'],
         tallas: {
           'Talla 2-6': 111000,
           'Talla 8-12': 122000,
@@ -547,6 +751,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Diario Femenino',
         categoria: 'diario',
         genero: 'feme',
+        piezas: ['Camisa Diario', 'Falda Diario'],
         tallas: {
           'Talla 2-6': 120000,
           'Talla 8-12': 128000,
@@ -592,6 +797,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Deportivo (2 pzas)',
         categoria: 'deportivo',
         genero: 'mixto',
+        piezas: ['Sueter Deportivo', 'Sudadera Deportiva'],
         tallas: {
           'Talla 2-6': 97000,
           'Talla 8-12': 104000,
@@ -630,12 +836,38 @@ const INSTITUCIONES = [
     color: '#7B1929',
     // Nota: Megacolegio usa tallas 4-12, 14-16 y XS-L (adultos)
     productos: [
+      // ── KIT COMPLETO (Sin Gala disponible) ─────────────────────────
+      {
+        id: 'mega_kit_masc',
+        nombre: 'Kit Completo Masculino',
+        categoria: 'kit',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario', 'Sueter Deportivo', 'Sudadera Deportiva', 'Camisilla Deportiva', 'Pantaloneta Deportiva'],
+        tallas: {
+          'Talla 4-12': 209000,
+          'Talla 14-16': 227000,
+          'Talla XS-L': 242000,
+        }
+      },
+      {
+        id: 'mega_kit_feme',
+        nombre: 'Kit Completo Femenino',
+        categoria: 'kit',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Jardinera Diario', 'Sueter Deportivo', 'Sudadera Deportiva', 'Camisilla Deportiva', 'Pantaloneta Deportiva'],
+        tallas: {
+          'Talla 4-12': 259000,
+          'Talla 14-16': 277000,
+          'Talla XS-L': 297000,
+        }
+      },
       // ── DIARIO (precios diferenciales por género) ───────────────────
       {
         id: 'mega_kit_diario_masc',
         nombre: 'Kit Diario Masculino',
         categoria: 'diario',
         genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario'],
         tallas: {
           'Talla 4-12': 90000,
           'Talla 14-16': 96000,
@@ -647,6 +879,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Diario Femenino',
         categoria: 'diario',
         genero: 'feme',
+        piezas: ['Camisa Diario', 'Jardinera Diario'],
         tallas: {
           'Talla 4-12': 140000,
           'Talla 14-16': 146000,
@@ -677,7 +910,7 @@ const INSTITUCIONES = [
       },
       {
         id: 'mega_jardinera',
-        nombre: 'Jardinera / Falda Diario',
+        nombre: 'Jardinera Diario',
         categoria: 'diario',
         genero: 'feme',
         tallas: {
@@ -692,6 +925,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Deportivo (2 pzas)',
         categoria: 'deportivo',
         genero: 'mixto',
+        piezas: ['Sueter Deportivo', 'Sudadera Deportiva'],
         tallas: {
           'Talla 4-12': 79000,
           'Talla 14-16': 85000,
@@ -703,6 +937,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Deportivo (4 pzas)',
         categoria: 'deportivo',
         genero: 'mixto',
+        piezas: ['Sueter Deportivo', 'Sudadera Deportiva', 'Camisilla Deportiva', 'Pantaloneta Deportiva'],
         tallas: {
           'Talla 4-12': 119000,
           'Talla 14-16': 131000,
@@ -762,12 +997,47 @@ const INSTITUCIONES = [
     nombre: 'Mundo de Colores',
     color: '#7B1929',
     productos: [
-      // ── KINDER ──────────────────────────────────────────────────────
+      // ── KIT COMPLETO KINDER ─────────────────────────────────────────
       {
-        id: 'mc_kit_kinder',
-        nombre: 'Kit Kinder',
+        id: 'mc_kit_kinder_masc',
+        nombre: 'Kit Completo Kinder Masculino',
         categoria: 'kit',
-        genero: 'mixto',
+        genero: 'masc',
+        piezas: ['Camisa Kinder', 'Overol Kinder Masculino', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 269000,
+          'Talla 8-12': 283000,
+        }
+      },
+      {
+        id: 'mc_kit_kinder_feme',
+        nombre: 'Kit Completo Kinder Femenino',
+        categoria: 'kit',
+        genero: 'feme',
+        piezas: ['Blusa Kinder', 'Overol Kinder Femenino', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 269000,
+          'Talla 8-12': 283000,
+        }
+      },
+      // ── DIARIO KINDER ───────────────────────────────────────────────
+      {
+        id: 'mc_kit_diario_kinder_masc',
+        nombre: 'Kit Diario Kinder Masculino',
+        categoria: 'diario',
+        genero: 'masc',
+        piezas: ['Camisa Kinder', 'Overol Kinder Masculino'],
+        tallas: {
+          'Talla 2-6': 141000,
+          'Talla 8-12': 143000,
+        }
+      },
+      {
+        id: 'mc_kit_diario_kinder_feme',
+        nombre: 'Kit Diario Kinder Femenino',
+        categoria: 'diario',
+        genero: 'feme',
+        piezas: ['Blusa Kinder', 'Overol Kinder Femenino'],
         tallas: {
           'Talla 2-6': 141000,
           'Talla 8-12': 143000,
@@ -777,28 +1047,62 @@ const INSTITUCIONES = [
         id: 'mc_camisa_kinder',
         nombre: 'Camisa Kinder',
         categoria: 'diario',
-        genero: 'mixto',
+        genero: 'masc',
         tallas: {
           'Talla 2-6': 68000,
           'Talla 8-12': 70000,
         }
       },
       {
-        id: 'mc_overol_kinder',
-        nombre: 'Overol Kinder',
+        id: 'mc_blusa_kinder',
+        nombre: 'Blusa Kinder',
         categoria: 'diario',
-        genero: 'mixto',
+        genero: 'feme',
+        tallas: {
+          'Talla 2-6': 68000,
+          'Talla 8-12': 70000,
+        }
+      },
+      {
+        id: 'mc_overol_kinder_masc',
+        nombre: 'Overol Kinder Masculino',
+        categoria: 'diario',
+        genero: 'masc',
         tallas: {
           'Talla 2-6': 73000,
           'Talla 8-12': 73000,
         }
       },
-      // ── TRANSICION-PRIMARIA ─────────────────────────────────────────
+      {
+        id: 'mc_overol_kinder_feme',
+        nombre: 'Overol Kinder Femenino',
+        categoria: 'diario',
+        genero: 'feme',
+        tallas: {
+          'Talla 2-6': 73000,
+          'Talla 8-12': 73000,
+        }
+      },
+      // ── KIT COMPLETO PRIMARIA ───────────────────────────────────────
       {
         id: 'mc_kit_primaria',
+        nombre: 'Kit Completo Transición-Primaria',
+        categoria: 'kit',
+        genero: 'mixto',
+        piezas: ['Camisa Transición-Primaria', 'Pantalón Transición-Primaria', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 258000,
+          'Talla 8-12': 274000,
+          'Talla 14-16': 286000,
+        }
+      },
+      // ── TRANSICION-PRIMARIA ─────────────────────────────────────────
+      {
+        id: 'mc_kit_diario_primaria',
         nombre: 'Kit Diario Transición-Primaria',
         categoria: 'diario',
         genero: 'mixto',
+        piezas: ['Camisa Transición-Primaria', 'Pantalón Transición-Primaria'],
         tallas: {
           'Talla 2-6': 130000,
           'Talla 8-12': 134000,
@@ -818,7 +1122,7 @@ const INSTITUCIONES = [
       },
       {
         id: 'mc_pantalon_primaria',
-        nombre: 'Pantalón / Falda Transición-Primaria',
+        nombre: 'Pantalón Transición-Primaria',
         categoria: 'diario',
         genero: 'mixto',
         tallas: {
@@ -833,6 +1137,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Deportivo (2 pzas)',
         categoria: 'deportivo',
         genero: 'mixto',
+        piezas: ['Sueter Deportivo', 'Sudadera Deportiva'],
         tallas: {
           'Talla 2-6': 128000,
           'Talla 8-12': 140000,
@@ -870,12 +1175,50 @@ const INSTITUCIONES = [
     nombre: 'Peniel',
     color: '#7B1929',
     productos: [
+      // ── KIT COMPLETO (Sin Gala disponible) ─────────────────────────
+      {
+        id: 'peniel_kit_masc',
+        nombre: 'Kit Completo Masculino',
+        categoria: 'kit',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 258000,
+          'Talla 8-12': 275000,
+          'Talla 14-16': 291000,
+        }
+      },
+      {
+        id: 'peniel_kit_feme',
+        nombre: 'Kit Completo Femenino',
+        categoria: 'kit',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Falda Diario', 'Sueter Deportivo', 'Sudadera Deportiva'],
+        tallas: {
+          'Talla 2-6': 258000,
+          'Talla 8-12': 275000,
+          'Talla 14-16': 291000,
+        }
+      },
       // ── DIARIO ──────────────────────────────────────────────────────
       {
-        id: 'peniel_kit_diario',
-        nombre: 'Kit Diario',
+        id: 'peniel_kit_diario_masc',
+        nombre: 'Kit Diario Masculino',
         categoria: 'diario',
-        genero: 'mixto',
+        genero: 'masc',
+        piezas: ['Camisa Diario', 'Pantalón Diario'],
+        tallas: {
+          'Talla 2-6': 130000,
+          'Talla 8-12': 137000,
+          'Talla 14-16': 147000,
+        }
+      },
+      {
+        id: 'peniel_kit_diario_feme',
+        nombre: 'Kit Diario Femenino',
+        categoria: 'diario',
+        genero: 'feme',
+        piezas: ['Camisa Diario', 'Falda Diario'],
         tallas: {
           'Talla 2-6': 130000,
           'Talla 8-12': 137000,
@@ -894,10 +1237,21 @@ const INSTITUCIONES = [
         }
       },
       {
-        id: 'peniel_pantalon_falda',
-        nombre: 'Pantalón / Falda Diario',
+        id: 'peniel_pantalon',
+        nombre: 'Pantalón Diario',
         categoria: 'diario',
-        genero: 'mixto',
+        genero: 'masc',
+        tallas: {
+          'Talla 2-6': 62000,
+          'Talla 8-12': 64000,
+          'Talla 14-16': 68000,
+        }
+      },
+      {
+        id: 'peniel_falda',
+        nombre: 'Falda Diario',
+        categoria: 'diario',
+        genero: 'feme',
         tallas: {
           'Talla 2-6': 62000,
           'Talla 8-12': 64000,
@@ -910,6 +1264,7 @@ const INSTITUCIONES = [
         nombre: 'Kit Deportivo (2 pzas)',
         categoria: 'deportivo',
         genero: 'mixto',
+        piezas: ['Sueter Deportivo', 'Sudadera Deportiva'],
         tallas: {
           'Talla 2-6': 128000,
           'Talla 8-12': 138000,
@@ -960,3 +1315,22 @@ function formatearPrecio(valor) {
 function getInstitucion(id) {
   return INSTITUCIONES.find(inst => inst.id === id);
 }
+
+/**
+ * Obtiene la lista de instituciones (solo metadatos, sin productos pesados).
+ */
+function getResumenInstituciones() {
+  return INSTITUCIONES.map(inst => ({
+    id: inst.id,
+    nombre: inst.nombre,
+    color: inst.color
+  }));
+}
+
+// Exportar para que app.js pueda usarlo
+window.ML_DATA = {
+  INSTITUCIONES,
+  formatearPrecio,
+  getInstitucion,
+  getResumenInstituciones
+};

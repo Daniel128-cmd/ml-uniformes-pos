@@ -11,6 +11,13 @@
  *   7. Inicialización
  */
 
+import { db, auth } from './firebase_config.js';
+import {
+    collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc,
+    query, where, orderBy, writeBatch, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
 /**
  * Calcula la fecha de entrega estimada: hoy + 15 días hábiles (lun–vie).
  * @returns {string} DD/MM/YYYY
@@ -21,7 +28,7 @@ function calcularFechaEntrega15DiasHabiles() {
     while (added < 15) {
         current.setDate(current.getDate() + 1);
         const dow = current.getDay(); // 0=Dom, 6=Sáb
-        if (dow !== 0 && dow !== 6) added++;
+        if (dow !== 0) added++;
     }
     const dd = String(current.getDate()).padStart(2, '0');
     const mm = String(current.getMonth() + 1).padStart(2, '0');
@@ -68,28 +75,34 @@ function fechaActual() {
 }
 
 /**
- * Calcula fecha de entrega sumando N días hábiles (L-V) a una fecha de inicio.
- * Si el resultado cae en sábado o domingo, lo avanza al lunes siguiente.
- * @param {Date} fechaInicio
- * @param {number} diasHabiles - por defecto 15
- * @returns {string} DD/MM/YYYY
+ * Algoritmo Avanzado: Cálculo de Fecha de Entrega en Días Hábiles
+ * Calcula la fecha de entrega sumando N días hábiles (L-S) a una fecha de inicio.
+ * Evita asignar fechas de entrega en domingos.
+ * @param {Date} fechaInicio - Objeto Date base de inicio.
+ * @param {number} diasHabiles - Días a sumar excluyendo domingos (default 15).
+ * @returns {string} Fecha formateada DD/MM/YYYY
  */
 function calcularFechaEntrega(fechaInicio = new Date(), diasHabiles = 15) {
     const fecha = new Date(fechaInicio);
     let contados = 0;
     while (contados < diasHabiles) {
         fecha.setDate(fecha.getDate() + 1);
-        const dia = fecha.getDay(); // 0=Dom, 6=Sab
-        if (dia !== 0 && dia !== 6) contados++;
+        const dia = fecha.getDay(); // 0=Domingo
+        if (dia !== 0) contados++;
     }
-    // Si cayó en sábado, avanzar a lunes
-    if (fecha.getDay() === 6) fecha.setDate(fecha.getDate() + 2);
+    // Si cae domingo por error manual, mover al lunes
     if (fecha.getDay() === 0) fecha.setDate(fecha.getDate() + 1);
+
     const pad = n => String(n).padStart(2, '0');
     return `${pad(fecha.getDate())}/${pad(fecha.getMonth() + 1)}/${fecha.getFullYear()}`;
 }
 
-/** Retorna un arreglo de tallas exactas basado en un rango */
+/**
+ * Normaliza las cadenas de rangos de tallas comerciales a sus equivalentes exactos,
+ * aislando prefijos descriptivos de la lógica de catálogo.
+ * @param {string} rangoTalla - Rango de talla en crudo (Ej: '4-12 Diario').
+ * @returns {string[]} Arreglo de opciones de talla discretas y sanitizadas.
+ */
 function obtenerTallasExactas(rangoTalla) {
     const str = rangoTalla.toLowerCase();
     if (str.includes('2-6')) return ['2', '4', '6'];
@@ -100,7 +113,8 @@ function obtenerTallasExactas(rangoTalla) {
     if (str.includes('m-l')) return ['M', 'L'];
     if (str.includes('xl-xxl')) return ['XL', 'XXL'];
     if (str.includes('xs-l')) return ['XS', 'S', 'M', 'L'];
-    // Fallback por si la talla ya es única o no se encuentra en la lista
+
+    // Regexp agresivo para remover ruido de catálogo si no cae en rangos conocidos
     return [rangoTalla.replace(/tdalla|diario|deportivo|kit|feme|masc/gi, '').trim() || rangoTalla];
 }
 
@@ -257,6 +271,12 @@ function abrirModalTalla(producto) {
     $('exact-size-section').style.display = 'none';
     $('exact-size-pills').innerHTML = '';
 
+    const customSection = document.getElementById('piece-custom-sizes-section');
+    if (customSection) {
+        customSection.style.display = 'none';
+        document.getElementById('piece-custom-sizes-container').innerHTML = '';
+    }
+
     // Renderizar pills de tallas
     const pillsContainer = $('size-pills');
     pillsContainer.innerHTML = '';
@@ -295,6 +315,12 @@ function seleccionarTalla(talla, precio) {
     exactContainer.innerHTML = '';
     exactSection.style.display = 'block';
 
+    const customSection = document.getElementById('piece-custom-sizes-section');
+    if (customSection) {
+        customSection.style.display = 'none';
+        document.getElementById('piece-custom-sizes-container').innerHTML = '';
+    }
+
     const exactas = obtenerTallasExactas(talla);
     exactas.forEach(exacta => {
         const pill = document.createElement('button');
@@ -319,6 +345,28 @@ function seleccionarTallaExacta(exacta) {
         const isSelected = pill.dataset.exacta === exacta;
         pill.classList.toggle('selected', isSelected);
     });
+
+    // Mostrar inputs de tallas personalizadas por prenda
+    const customSection = document.getElementById('piece-custom-sizes-section');
+    const customContainer = document.getElementById('piece-custom-sizes-container');
+    if (customSection && customContainer) {
+        customContainer.innerHTML = '';
+        const producto = STATE.productoActual;
+        const piezasDef = producto.piezas || [producto.nombre];
+
+        piezasDef.forEach((pz, idx) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 4px 0;';
+            div.innerHTML = `
+                <span style="font-size:13px; color:var(--gray-800); font-weight:500;">- ${pz}</span>
+                <input type="text" id="custom-size-pz-${idx}" placeholder="Ej: Cintura 12" 
+                style="width: 140px; padding: 6px 8px; font-size: 13px; border: 1px solid var(--gray-300); border-radius: 6px; outline: none;">
+            `;
+            customContainer.appendChild(div);
+        });
+
+        customSection.style.display = 'block';
+    }
 
     // Habilitar botón agregar solo si ambas están seleccionadas
     if (STATE.tallaSeleccionada && STATE.tallaExactaSeleccionada) {
@@ -345,9 +393,23 @@ function agregarAlCarrito() {
     const cantidad = STATE.modalCantidad;
     const precio = producto.tallas[tallaRango];
 
+    // Recolectar tallas personalizadas y asignar piezas
+    const piezasDef = producto.piezas || [producto.nombre];
+    const piezasAsignadas = piezasDef.map((pNombre, idx) => {
+        const inputEl = document.getElementById('custom-size-pz-' + idx);
+        const customValue = inputEl ? inputEl.value.trim() : '';
+        return {
+            nombre: pNombre,
+            estado: 'Pendiente', // Inicia las piezas del carrito como pendientes, según lo requerido
+            tallaPersonalizada: customValue
+        };
+    });
+
     const tallaFinal = `${tallaRango} (Talla: ${exacta})`;
-    // Clave única: productoId + talla rango + talla exacta
-    const clave = `${producto.id}__${tallaRango}__${exacta}`;
+
+    // Hash clave incorporando texto personalizado para apartar en líneas distintas del carrito
+    const customSuffix = piezasAsignadas.map(p => p.tallaPersonalizada).join('_').replace(/[^a-zA-Z0-9]/g, '');
+    const clave = `${producto.id}__${tallaRango}__${exacta}__${customSuffix}`;
     const existente = STATE.cart.find(i => i.clave === clave);
 
     if (existente) {
@@ -361,7 +423,8 @@ function agregarAlCarrito() {
             tallaRango: tallaRango,
             tallaExacta: exacta,
             precio: precio,
-            cantidad: cantidad
+            cantidad: cantidad,
+            piezas: piezasAsignadas
         });
     }
 
@@ -423,10 +486,40 @@ function renderCarrito() {
       </div>
     `;
 
+        // Si tiene piezas, mostrar selectores de estado para entregas parciales
+        if (item.piezas && item.piezas.length > 0) {
+            let piezasHTML = '<div class="f-piezas-container" style="margin-top: 8px; border-top: 1px dashed var(--gray-300); padding-top: 8px;">';
+            item.piezas.forEach((pz, idx) => {
+                piezasHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 13px;">
+                        <span style="color: var(--gray-700)">• ${pz.nombre}</span>
+                        <select class="f-select-pieza" data-clave="${item.clave}" data-index="${idx}" style="padding: 2px 4px; border-radius: 4px; border: 1px solid var(--gray-300); background: var(--surface); color: var(--gray-800); font-size: 12px; font-weight: 500;">
+                            <option value="Entregado" ${pz.estado === 'Entregado' ? 'selected' : ''}>✅ Entregado</option>
+                            <option value="Apartado" ${pz.estado === 'Apartado' ? 'selected' : ''}>📦 Apartado</option>
+                            <option value="Pendiente" ${pz.estado === 'Pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
+                        </select>
+                    </div>
+                `;
+            });
+            piezasHTML += '</div>';
+            div.innerHTML += piezasHTML;
+        }
+
         // Eventos de cantidad y eliminar
         div.querySelector('.btn-remove-item').addEventListener('click', () => eliminarDelCarrito(item.clave));
         div.querySelector('.qty-minus-cart').addEventListener('click', () => cambiarCantidad(item.clave, -1));
         div.querySelector('.qty-plus-cart').addEventListener('click', () => cambiarCantidad(item.clave, +1));
+
+        // Eventos para cambiar estado de piezas
+        div.querySelectorAll('.f-select-pieza').forEach(sel => {
+            sel.addEventListener('change', (e) => {
+                const mapItem = STATE.cart.find(c => c.clave === e.target.getAttribute('data-clave'));
+                const mapIdx = parseInt(e.target.getAttribute('data-index'));
+                if (mapItem && mapItem.piezas[mapIdx]) {
+                    mapItem.piezas[mapIdx].estado = e.target.value;
+                }
+            });
+        });
 
         container.appendChild(div);
     });
@@ -512,13 +605,16 @@ function abrirVistaPrevia() {
     const telCliente = $('input-telefono').value.trim() || '—';
     const totalPrecio = STATE.cart.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
+    // ── Parseo de Abonos y Validación de Cifras Mayores ─────────────────────
     const pagoMetodo = pagoVal || 'Efectivo';
     const fechaEntrega = calcularFechaEntrega15DiasHabiles();
     const abonoEl = $('input-abono');
-    // Strip dot-thousands separators before parsing (e.g. '45.000' → 45000)
+
+    // El sistema purga puntos de formato (miles/millones) antes de parsear a Float
+    // Evitando overflows en valores nominales grandes (Ej: Colombia $M+)
     const abonoInicial = abonoEl ? Math.max(0, parseFloat((abonoEl.value || '0').replace(/\./g, '')) || 0) : 0;
 
-    // Construir payload y guardarlo en STATE
+    // ── Construcción de Payload Unificado ───────────────────────────────────
     STATE.pendingPayload = {
         institucionId: STATE.institucionId,
         institucionNombre: inst.nombre,
@@ -534,7 +630,8 @@ function abrirVistaPrevia() {
             tallaRango: item.tallaRango,
             tallaExacta: item.tallaExacta,
             precio: item.precio,
-            cantidad: item.cantidad
+            cantidad: item.cantidad,
+            piezas: item.piezas // Traspasamos las piezas con su estado definido por el usuario
         }))
     };
 
@@ -575,6 +672,58 @@ function generarRecibo() {
     abrirVistaPrevia();
 }
 
+/**
+ * Función para enviar el comprobante recién generado vía WhatsApp usando Option A.
+ */
+function enviarPorWhatsApp() {
+    const payload = STATE.pendingPayload;
+    if (!payload) {
+        mostrarToast('Error: No se encontró la información del recibo.', 'error');
+        return;
+    }
+
+    // Asegurar prefijo de Colombia (+57) si el número tiene 10 dígitos (típico celular CO)
+    let tlf = payload.client_phone.replace(/\D/g, '');
+    if (tlf.length === 10) {
+        tlf = '57' + tlf;
+    }
+
+    const nroRecibo = document.getElementById('receipt-number-display')?.textContent || '';
+
+    let texto = `*Recibo de compra ML Uniformes*\n\n`;
+    texto += `*Colegio:* ${payload.institucionNombre}\n`;
+    texto += `*Recibo N°:* ${nroRecibo}\n\n`;
+    texto += `*Detalle del Pedido:*\n`;
+
+    payload.items.forEach(it => {
+        const isNumeric = !isNaN(it.tallaExacta);
+        const tallaStr = isNumeric ? `T${it.tallaExacta}` : it.tallaExacta;
+        texto += `- ${it.cantidad}x ${it.nombre} (${tallaStr})\n`;
+        if (it.piezas && it.piezas.length > 0) {
+            const variaciones = it.piezas.filter(p => p.tallaPersonalizada).map(p => `  └ ${p.nombre}: ${p.tallaPersonalizada}`);
+            if (variaciones.length > 0) {
+                texto += variaciones.join('\n') + '\n';
+            }
+        }
+    });
+
+    texto += `\n*Total:* ${fmt(payload.total_amount)}\n`;
+
+    if (payload.initial_payment > 0) {
+        texto += `*Abono:* ${fmt(payload.initial_payment)}\n`;
+        const saldo = payload.total_amount - payload.initial_payment;
+        if (saldo > 0) {
+            texto += `*Saldo Pendiente:* ${fmt(saldo)}\n`;
+        }
+    }
+
+    texto += `\n*Entrega Estimada:* ${payload.delivery_date}`;
+
+    const encodedText = encodeURIComponent(texto);
+    const url = `https://wa.me/${tlf}?text=${encodedText}`;
+    window.open(url, '_blank');
+}
+
 // PASO B: El usuario confirma → guardar en el servidor
 async function guardarPedidoConfirmado() {
     const payload = STATE.pendingPayload;
@@ -592,25 +741,86 @@ async function guardarPedidoConfirmado() {
     if (icon) icon.className = 'fas fa-spinner fa-spin';
 
     try {
-        const response = await fetch('http://localhost:8000/api/receipts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+        const inst = INSTITUCIONES.find(i => i.id === STATE.institucionId);
+        const institutionName = inst ? inst.nombre : 'Desconocida';
+
+        // ── 1. Generación Secuencial Segura (Árbitro Concurrente) ───────────
+        // Emplea transacciones Firestore en /counters para evitar condiciones 
+        // de carrera (race-conditions) si múltiples TPV abren pedidos simultáneos.
+        const counterRef = doc(db, 'counters', `receipts_${STATE.institucionId}`);
+
+        const newReceiptNumber = await runTransaction(db, async (transaction) => {
+            const counterDoc = await transaction.get(counterRef);
+            let currentNum = 0;
+            if (counterDoc.exists()) {
+                currentNum = counterDoc.data().current_receipt_number || 0;
+            }
+            const nextNum = currentNum + 1;
+            transaction.set(counterRef, { current_receipt_number: nextNum }, { merge: true });
+            return nextNum;
         });
 
-        if (!response.ok) throw new Error('Error en el servidor: ' + response.statusText);
-        const data = await response.json();
+        // Formateo del ID del RECIBO a 3/4 dígitos dinámicos (Ej: 001)
+        const paddedReceiptNumber = String(newReceiptNumber).padStart(3, '0');
 
-        // 🔔 Señalizar al Centro de Gestión que hay un recibo nuevo (auto-refresh)
-        localStorage.setItem('ml_pedidos_last_receipt', Date.now().toString());
+        // ── 2. Firestore Batching para Transacciones Multidocumento ───────────
+        // Aseguramos atomicidad relacional (Integridad ACiD) de Receipt, Items y Pagos.
+        const batch = writeBatch(db);
+        const receiptRef = doc(collection(db, 'receipts'));
 
-        // Rellenar modal de recibo con la respuesta del servidor
-        const inst = INSTITUCIONES.find(i => i.id === STATE.institucionId);
         const abono = payload.initial_payment || 0;
         const saldo = Math.max(0, payload.total_amount - abono);
+        const now = new Date().toISOString();
 
-        $('receipt-inst-name').textContent = inst ? inst.nombre : '';
-        $('receipt-number-display').textContent = data.receipt_number;
+        // 2a. Guardar Receipt
+        batch.set(receiptRef, {
+            receipt_number: newReceiptNumber,
+            institution_id: STATE.institucionId,
+            institution_name: institutionName, // Denormalizado para el Dashboard
+            client_name: payload.client_name,
+            client_phone: payload.client_phone,
+            delivery_date: payload.delivery_date,
+            total_amount: parseFloat(payload.total_amount),
+            balance: parseFloat(saldo),
+            status: 'Pendiente',
+            payment_method: payload.payment_method,
+            created_at: now
+        });
+
+        // 2b. Guardar Items
+        payload.items.forEach(item => {
+            const itemRef = doc(collection(receiptRef, 'items'));
+            batch.set(itemRef, {
+                product_id: item.productoId,
+                product_name: item.nombre,
+                size_range: item.tallaRango,
+                exact_size: item.tallaExacta,
+                quantity: parseInt(item.cantidad),
+                unit_price: parseFloat(item.precio),
+                subtotal: parseFloat(item.precio * item.cantidad),
+                piezas: item.piezas || [] // Array de piezas con su nombre y estado ('Entregado' o 'Pendiente')
+            });
+        });
+
+        // 2c. Guardar Abono Inicial
+        if (abono > 0) {
+            const paymentRef = doc(collection(receiptRef, 'payments'));
+            batch.set(paymentRef, {
+                amount: parseFloat(abono),
+                payment_method: payload.payment_method,
+                created_at: now
+            });
+        }
+
+        // --- 3. Ejecutar Batch ---
+        await batch.commit();
+
+        // 🔔 Señalizar al Dashboard
+        localStorage.setItem('ml_pedidos_last_receipt', Date.now().toString());
+
+        // Rellenar modal de recibo
+        $('receipt-inst-name').textContent = institutionName;
+        $('receipt-number-display').textContent = paddedReceiptNumber;
         $('receipt-date-display').textContent = fechaActual();
         $('receipt-client-name').textContent = payload.client_name;
         $('receipt-client-phone').textContent = payload.client_phone;
@@ -635,13 +845,32 @@ async function guardarPedidoConfirmado() {
         STATE.cart.forEach(item => {
             const row = document.createElement('div');
             row.className = 'receipt-item';
+
+            // Construir subtítulo de piezas
+            let piezasListHTML = '';
+            if (item.piezas && item.piezas.length > 0) {
+                piezasListHTML = '<div style="margin-top:4px; font-size:12px; color:#5f6368;">';
+                item.piezas.forEach(pz => {
+                    const icon = pz.estado === 'Entregado' ? '✅' : (pz.estado === 'Apartado' ? '📦' : '⏳');
+                    const weight = pz.estado === 'Pendiente' ? 'font-weight:600; color:#d93025;' : (pz.estado === 'Apartado' ? 'font-weight:600; color:#E65100;' : '');
+                    piezasListHTML += `<div style="${weight}">${icon} ${pz.nombre} - ${pz.estado}</div>`;
+                });
+                piezasListHTML += '</div>';
+            }
+
             row.innerHTML = `
-                <div class="receipt-item-desc">
-                    <div class="receipt-item-name">${item.nombre}</div>
+                <div class="receipt-item-desc" style="width: 100%;">
+                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                        <div class="receipt-item-name">${item.nombre}</div>
+                        <div class="receipt-item-price">${fmt(item.precio * item.cantidad)}</div>
+                    </div>
                     <div class="receipt-item-detail">${item.talla} &times; ${item.cantidad}</div>
+                    ${piezasListHTML}
                 </div>
-                <div class="receipt-item-price">${fmt(item.precio * item.cantidad)}</div>
             `;
+
+            // Cleanup some original styles since we moved price inside desc for better flex
+            row.style.alignItems = 'flex-start';
             listaContainer.appendChild(row);
         });
 
@@ -649,17 +878,16 @@ async function guardarPedidoConfirmado() {
         $('receipt-modal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
         STATE.cart = [];
-        STATE.pendingPayload = null;
         $('input-nombre').value = '';
         $('input-telefono').value = '';
         if ($('input-abono')) $('input-abono').value = '0';
         if ($('input-pago')) $('input-pago').value = '';
         renderCarrito();
-        mostrarToast('✅ Pedido guardado: ' + data.receipt_number);
+        mostrarToast('✅ Pedido guardado: ' + paddedReceiptNumber);
 
     } catch (error) {
-        console.error('Error guardando recibo:', error);
-        mostrarToast('❌ Error al guardar. Verifica el backend.');
+        console.error('Error guardando recibo en Firestore:', error);
+        mostrarToast('❌ Error al guardar. Verifica consola.');
     } finally {
         btnGenerar.disabled = false;
         if (spanText) spanText.textContent = 'Generar Recibo';
@@ -670,6 +898,7 @@ async function guardarPedidoConfirmado() {
 function cerrarRecibo() {
     $('receipt-modal').classList.add('hidden');
     document.body.style.overflow = '';
+    STATE.pendingPayload = null;
 }
 
 /* ═══════════════════════════════════════════════
@@ -754,6 +983,10 @@ function initEventos() {
 
     // Botón imprimir
     $('btn-print').addEventListener('click', () => window.print());
+
+    // Botón WhatsApp
+    const wBtn = $('btn-whatsapp');
+    if (wBtn) wBtn.addEventListener('click', enviarPorWhatsApp);
 
     // Cerrar recibo
     $('btn-close-receipt').addEventListener('click', cerrarRecibo);
@@ -840,62 +1073,66 @@ async function doLogin() {
     $('login-error').style.display = 'none';
 
     try {
-        const resp = await fetch('http://localhost:8000/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+        const email = username.includes('@') ? username : `${username}@mlpuntodeventa.com`;
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+
+        STATE.loggedUser = userCred.user;
+        $('login-modal').classList.add('hidden');
+        document.body.style.overflow = '';
+        $('login-user').value = '';
+        $('login-pass').value = '';
+
+        // Poblar filtro de colegios
+        const filterInst = $('filter-inst');
+        filterInst.innerHTML = '<option value="">Todas las Inst.</option>';
+        INSTITUCIONES.forEach(inst => {
+            const opt = document.createElement('option');
+            opt.value = inst.nombre;
+            opt.textContent = inst.nombre;
+            filterInst.appendChild(opt);
         });
-        const data = await resp.json();
 
-        if (data.success) {
-            STATE.loggedUser = data.user;
-            $('login-modal').classList.add('hidden');
-            document.body.style.overflow = '';
-            $('login-user').value = '';
-            $('login-pass').value = '';
-
-            // Poblar filtro de colegios
-            const filterInst = $('filter-inst');
-            filterInst.innerHTML = '<option value="">Todas las Inst.</option>';
-            INSTITUCIONES.forEach(inst => {
-                const opt = document.createElement('option');
-                opt.value = inst.nombre;
-                opt.textContent = inst.nombre;
-                filterInst.appendChild(opt);
-            });
-
-            $('dashboard-panel').classList.add('open');
-            loadDashboardData();
-        } else {
-            $('login-error').style.display = 'block';
-        }
+        $('dashboard-panel').classList.add('open');
+        loadDashboardData();
     } catch (e) {
-        $('login-error').textContent = 'Sin conexión con el servidor.';
+        console.error('Error login:', e);
+        $('login-error').textContent = 'Credenciales inválidas.';
         $('login-error').style.display = 'block';
     }
 }
+
+import { limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 async function loadDashboardData() {
     const institution = $('filter-inst').value;
     const status = $('filter-status').value;
 
-    let url = 'http://localhost:8000/api/dashboard/live';
-    const params = [];
-    if (institution) params.push('institution=' + encodeURIComponent(institution));
-    if (status) params.push('status=' + encodeURIComponent(status));
-    if (params.length) url += '?' + params.join('&');
-
     const tbody = $('live-table-body');
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">Cargando...</td></tr>';
 
     try {
-        const resp = await fetch(url);
-        const rows = await resp.json();
+        let qConstraints = [orderBy('created_at', 'desc'), limit(50)];
+        if (institution) qConstraints.unshift(where('institution_name', '==', institution));
+        if (status) qConstraints.unshift(where('status', '==', status));
 
-        if (!rows.length) {
+        const q = query(collection(db, 'receipts'), ...qConstraints);
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--gray-600)">Sin resultados</td></tr>';
             return;
         }
+
+        const rows = [];
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            rows.push({
+                number: String(data.receipt_number).padStart(3, '0'),
+                client: data.client_name,
+                total: data.total_amount,
+                status: data.status
+            });
+        });
 
         tbody.innerHTML = rows.map(r => `
             <tr>
@@ -906,7 +1143,13 @@ async function loadDashboardData() {
             </tr>
         `).join('');
     } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="4" style="color:red; text-align:center">Error al cargar datos</td></tr>';
+        console.error("Error dashboard:", e);
+        // Fallback for missing Index error
+        if (e.message && e.message.includes('requires an index')) {
+            tbody.innerHTML = '<tr><td colspan="4" style="color:#D93025; text-align:center; font-size:12px;">Se requiere crear un índice en Firebase. Revisa la consola para el link.</td></tr>';
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4" style="color:red; text-align:center">Error al cargar datos</td></tr>';
+        }
     }
 }
 
